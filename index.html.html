@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Análisis de gases · Decreto 1886 de 2015</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#eef1f4;
+  --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --focus:#2563eb;
+  --t1:#2563eb; --t2:#7c3aed;
+  --sev-normal:#16a34a; --sev-alerta:#ca8a04; --sev-limite:#ea580c;
+  --sev-critico:#dc2626; --sev-evac:#991b1b;
+  --sev-normal-bg:rgba(22,163,74,.12); --sev-alerta-bg:rgba(202,138,4,.12);
+  --sev-limite-bg:rgba(234,88,12,.12); --sev-critico-bg:rgba(220,38,38,.12);
+  --sev-evac-bg:rgba(153,27,27,.12);
+  --ok-bg:rgba(22,163,74,.10); --ok-line:#16a34a;
+  --shadow:0 1px 3px rgba(0,0,0,.08);
+  --radius-card:12px; --radius-ctrl:8px;
+  --space-1:8px; --space-2:16px; --space-3:24px; --space-4:32px; --space-5:48px;
+  --fs-12:12px; --fs-14:14px; --fs-16:16px; --fs-20:20px; --fs-28:28px;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0b1220;--surface:#111a2b;--surface-2:#1a2438;--ink:#e5ecf5;--muted:#94a3b8;--line:#1f2a3d;--focus:#60a5fa;--t1:#60a5fa;--t2:#a78bfa;--shadow:none}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+*{box-sizing:border-box}
+html,body{margin:0;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font:14px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.shell{max-width:1100px;margin:0 auto;padding:0 var(--space-2)}
+.topbar{position:sticky;top:0;z-index:50;height:56px;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1100px;margin:0 auto;padding:0 var(--space-2);height:56px;display:flex;align-items:center;gap:var(--space-2)}
+.brand{font-size:15px;font-weight:700;white-space:nowrap}
+.stepper{display:flex;gap:6px;align-items:center;margin-left:var(--space-2);flex:1;overflow:hidden}
+.step{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;white-space:nowrap}
+.step .dot{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--surface)}
+.step.active{color:var(--ink)}
+.step.active .dot{border-color:var(--focus);background:var(--focus);color:#fff}
+.step.done .dot{border-color:var(--sev-normal);background:var(--sev-normal-bg);color:var(--sev-normal)}
+.step-sep{width:16px;height:1px;background:var(--line)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-ctrl);overflow:hidden;background:var(--surface);flex-wrap:wrap}
+.seg label{padding:6px 12px;font-size:13px;cursor:pointer;color:var(--muted);white-space:nowrap}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg input:checked+label{background:var(--focus);color:#fff}
+.seg input:focus-visible+label{outline:2px solid var(--focus);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--radius-ctrl);padding:7px 14px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--focus);color:#fff;border-color:var(--focus);font-weight:600}
+.btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);padding:var(--space-3);margin-bottom:var(--space-2);box-shadow:var(--shadow)}
+.h-page{font-size:var(--fs-28);font-weight:700;margin:0 0 6px}
+.h-sec{font-size:var(--fs-20);font-weight:600;margin:0 0 12px}
+.label{font-size:var(--fs-12);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)}
+.kpi{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi-sm{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.row{display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap}
+.grid{display:grid;gap:var(--space-2)}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:1023px){.grid-3{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:639px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.chip.sev-normal{color:var(--sev-normal);background:var(--sev-normal-bg)}
+.chip.sev-alerta{color:var(--sev-alerta);background:var(--sev-alerta-bg)}
+.chip.sev-limite{color:var(--sev-limite);background:var(--sev-limite-bg)}
+.chip.sev-critico{color:var(--sev-critico);background:var(--sev-critico-bg)}
+.chip.sev-evac{color:var(--sev-evac);background:var(--sev-evac-bg)}
+.chip.aux{color:var(--muted);background:var(--surface-2)}
+.chip.ok{color:var(--sev-normal);background:var(--sev-normal-bg)}
+.chip.no{color:var(--sev-critico);background:var(--sev-critico-bg)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--ink)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius-ctrl)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+th{background:var(--surface-2);font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--surface-2) 40%,transparent)}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);padding:0 0 1px;margin-bottom:var(--space-2)}
+.tab{padding:10px 14px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab.active{color:var(--ink);border-bottom-color:var(--focus);font-weight:600}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:var(--space-2)}
+.pill{padding:5px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;cursor:pointer;color:var(--muted)}
+.pill.active{background:var(--focus);color:#fff;border-color:var(--focus)}
+.stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);padding:var(--space-3)}
+.stat-card .kpi{font-size:36px}
+details{border:1px solid var(--line);border-radius:var(--radius-ctrl);padding:0;margin-bottom:var(--space-2);background:var(--surface)}
+details>summary{padding:10px 14px;cursor:pointer;font-weight:500;font-size:13px;list-style:none;display:flex;align-items:center;justify-content:space-between}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:"▸";color:var(--muted);transition:transform .15s}
+details[open]>summary::after{transform:rotate(90deg)}
+details>div{padding:12px 14px;border-top:1px solid var(--line)}
+input[type=range]{width:100%;accent-color:var(--focus)}
+input[type=date],input[type=number],select{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-ctrl);padding:6px 10px;color:var(--ink);font:inherit;font-size:13px}
+.drop{border:2px dashed var(--line);border-radius:var(--radius-ctrl);padding:var(--space-5) var(--space-3);text-align:center;color:var(--muted);transition:border-color .15s,background .15s;background:var(--surface);cursor:pointer;display:block}
+.drop.over{border-color:var(--focus);background:color-mix(in srgb,var(--focus) 6%,transparent);color:var(--ink)}
+.stack{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--surface-2);margin-top:8px}
+.stack>span{height:100%}
+.ipra-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;position:relative;background:var(--surface-2);margin:8px 0}
+.ipra-bar>span{height:100%}
+.ipra-mark{position:absolute;top:-4px;width:2px;height:22px;background:var(--ink);border-radius:1px}
+.chart-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);padding:var(--space-2);margin-bottom:var(--space-2)}
+.chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:12px}
+.chart-legend button{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--ink);cursor:pointer;padding:2px 6px;border-radius:4px;font:inherit;font-size:12px}
+.chart-legend button[aria-pressed="false"]{opacity:.35;text-decoration:line-through}
+.chart-legend i{width:12px;height:2px;border-radius:1px;display:inline-block}
+.chart-legend i.lim{background:repeating-linear-gradient(to right,#dc2626 0 3px,transparent 3px 6px);height:3px}
+svg{display:block;width:100%;height:auto}
+.empty{text-align:center;padding:var(--space-4);color:var(--muted)}
+.empty .ico{font-size:36px;margin-bottom:8px;display:block}
+.nota-legal{background:var(--surface-2);border-left:4px solid var(--focus);padding:10px 14px;border-radius:6px;font-size:12px;margin-top:12px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--focus);color:#fff;padding:14px 20px;border-radius:var(--radius-card);font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:200;opacity:0;transform:translateY(20px);transition:opacity .25s,transform .25s}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{background:var(--sev-normal)}
+@media print{
+  .topbar,.btn,.tabs,.pills,details>summary,.drop,footer,.no-print,.toast{display:none!important}
+  body{background:#fff;color:#000}
+  .card{box-shadow:none;border:1px solid #ccc;page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">⛏ Gases · D. 1886/2015</div>
+    <nav class="stepper" aria-label="Progreso">
+      <div class="step" data-step="1"><span class="dot">1</span>Datos</div>
+      <span class="step-sep"></span>
+      <div class="step" data-step="2"><span class="dot">2</span>Configurar</div>
+      <span class="step-sep"></span>
+      <div class="step" data-step="3"><span class="dot">3</span>Resultados</div>
+    </nav>
+    <div id="entidad-selector" class="seg" role="group" aria-label="Entidad a analizar" style="display:none"></div>
+    <button class="btn primary" id="bRun" disabled>Ejecutar análisis</button>
+    <button class="btn" id="bRep" disabled>Generar reporte</button>
+  </div>
+</header>
+
+<main class="shell" style="padding-top:var(--space-3)">
+
+  <!-- PASO 1 -->
+  <section id="step1" class="card">
+    <h2 class="h-sec">1 · Cargar archivo</h2>
+    <p class="muted" style="margin-top:0">
+      Sube un archivo de <b>Estadística de Concentraciones de Metano</b> o de <b>Aforos de Ventilación</b> (formato FOR-SIG-190).
+      El análisis de gases se rige por los <b>límites permisibles del Decreto 1886 de 2015</b>. Las variables de ventilación se guardan como auxiliares y no influyen en el IPRA.
+    </p>
+    <label class="drop" id="drop" for="fl" style="margin-top:var(--space-2)">
+      <div style="font-size:40px;margin-bottom:8px">📂</div>
+      <div style="font-size:16px"><b>Subir archivo</b></div>
+      <div style="font-size:13px;margin-top:6px">XLSX, XLS, CSV · arrastra o haz clic</div>
+      <input type="file" id="fl" accept=".csv,.txt,.xlsx,.xls" hidden>
+    </label>
+    <div id="q" style="margin-top:var(--space-2)" aria-live="polite"></div>
+  </section>
+
+  <!-- PASO 2 -->
+  <section id="step2" class="card" hidden>
+    <h2 class="h-sec">2 · Configurar</h2>
+    <div class="grid grid-3">
+      <div><div class="label">Desde</div><input type="date" id="d0" style="width:100%"></div>
+      <div><div class="label">Hasta</div><input type="date" id="d1" style="width:100%"></div>
+      <div>
+        <div class="label">Agregación</div>
+        <div class="seg" role="radiogroup" aria-label="Agregación">
+          <input type="radio" id="ag-m" name="ag" value="m" checked><label for="ag-m">Media</label>
+          <input type="radio" id="ag-x" name="ag" value="x"><label for="ag-x">Máximo</label>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:var(--space-2)">
+      <div class="row" style="justify-content:space-between"><div class="label">Horizonte de proyección</div><div><b id="dv">7</b> días</div></div>
+      <input type="range" id="dy" min="1" max="30" value="7">
+    </div>
+
+    <details style="margin-top:var(--space-2)">
+      <summary>⚙️ Opciones avanzadas</summary>
+      <div>
+        <h3 style="margin-top:0;font-size:14px">Gases a analizar (Decreto 1886 de 2015)</h3>
+        <p class="muted" style="font-size:12px;margin-top:0">
+          Solo los gases participan en el IPRA y las alertas. Los umbrales por defecto corresponden al Decreto 1886 de 2015.
+        </p>
+        <div id="gs"></div>
+        <div class="stack" id="gstack"></div>
+
+        <h3 style="font-size:14px;margin-top:var(--space-3)">Umbrales por gas</h3>
+        <p class="muted" style="font-size:12px;margin-top:0">Editables. Valores por defecto: Decreto 1886 de 2015.</p>
+        <div id="th"></div>
+
+        <h3 style="font-size:14px;margin-top:var(--space-3)">Método de proyección</h3>
+        <div class="seg" role="radiogroup" aria-label="Método">
+          <input type="radio" id="me-a" name="me" value="a" checked><label for="me-a">Automático</label>
+          <input type="radio" id="me-l" name="me" value="l"><label for="me-l">Lineal</label>
+          <input type="radio" id="me-p" name="me" value="p"><label for="me-p">Polinómico</label>
+          <input type="radio" id="me-m" name="me" value="m"><label for="me-m">Media móvil</label>
+        </div>
+        <label style="display:block;margin-top:var(--space-2);cursor:pointer"><input type="checkbox" id="sv" checked> Aplicar regla de severidad máxima</label>
+      </div>
+    </details>
+
+    <div class="row" style="margin-top:var(--space-2);justify-content:flex-end">
+      <button class="btn primary" id="bRun2" disabled>▶ Ejecutar análisis</button>
+    </div>
+  </section>
+
+  <!-- PASO 3 -->
+  <section id="step3" hidden>
+    <div class="tabs" role="tablist" id="tabs-l1"></div>
+    <div id="tabs-l1-content"></div>
+  </section>
+</main>
+
+<footer class="shell" style="padding:var(--space-3) 0;text-align:center;font-size:12px;color:var(--muted)">
+  Análisis de gases según Decreto 1886 de 2015 · Ventilación solo informativa · Datos procesados en tu navegador.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+// =====================================================================
+// UTILIDADES
+// =====================================================================
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number.isFinite(n)?(Math.abs(n)>=100?n.toFixed(1):n.toFixed(3)):'—';
+function toast(msg,ok){
+  const t=$('#toast');
+  t.textContent=msg;
+  t.classList.toggle('ok',!!ok);
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// =====================================================================
+// ESTADO
+// =====================================================================
+const S={
+  rows:[], th:{}, res:null, q:[],
+  tabL1:'resumen', tabTunel:{}, gasSel:{},
+  showAllThr:false, showProj:true, pearson:true, hidden:new Set(),
+  _gsBound:false,
+  entidades:[], entidadSel:'all'
+};
+
+// =====================================================================
+// CATÁLOGO — Decreto 1886 de 2015
+// =====================================================================
+const CAT={
+  CH4:{
+    u:'%',r:[0,100],s:'a',ok:0,w:.40,
+    t:{alerta:.5,critico:1,evacuacion:1.4,limite:1.0},
+    familia:'gas',nombre:'CH₄ (%)',
+    ref:'D. 1886/2015 – atmósferas explosivas'
+  },
+  O2:{
+    u:'%',r:[0,21],s:'b',ok:20.9,w:.30,
+    t:{alerta:20.0,minimo:19.5,limite:19.5},
+    familia:'gas',nombre:'O₂ (%)',
+    ref:'D. 1886/2015 – atmósfera respirable'
+  },
+  CO:{
+    u:'ppm',r:[0,1e4],s:'a',ok:0,w:.20,
+    t:{alerta:20,limite:25,critico:50},
+    familia:'gas',nombre:'CO (ppm)',
+    ref:'D. 1886/2015 – valor límite permisible 25 ppm (TWA 8 h)'
+  },
+  CO2:{
+    u:'%',r:[0,100],s:'a',ok:0,w:.05,
+    t:{alerta:.35,limite:.5,critico:.75},
+    familia:'gas',nombre:'CO₂ (%)',
+    ref:'D. 1886/2015 – valor límite permisible 0.5 %'
+  },
+  H2S:{
+    u:'ppm',r:[0,1e3],s:'a',ok:0,w:.05,
+    t:{alerta:5,limite:10,critico:15},
+    familia:'gas',nombre:'H₂S (ppm)',
+    ref:'D. 1886/2015 – valor límite permisible 10 ppm (techo 15 ppm)'
+  },
+  NO2:{
+    u:'ppm',r:[0,100],s:'a',ok:0,w:.05,
+    t:{alerta:2,limite:3,critico:5},
+    familia:'gas',nombre:'NO₂ (ppm)',
+    ref:'D. 1886/2015 – valor límite permisible 3 ppm (techo 5 ppm)'
+  },
+  SO2:{
+    u:'ppm',r:[0,100],s:'a',ok:0,w:.02,
+    t:{alerta:1,limite:2,critico:5},
+    familia:'gas',nombre:'SO₂ (ppm)',
+    ref:'D. 1886/2015 – valor límite permisible 2 ppm (techo 5 ppm)'
+  },
+  NO:{
+    u:'ppm',r:[0,100],s:'a',ok:0,w:.02,
+    t:{alerta:15,limite:25,critico:50},
+    familia:'gas',nombre:'NO (ppm)',
+    ref:'D. 1886/2015 – valor límite permisible 25 ppm'
+  },
+  Q:{u:'m³/min',r:[0,1e6],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Caudal de aire Q (m³/min)'},
+  VELOCIDAD:{u:'m/seg',r:[0,1e3],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Velocidad (m/seg)'},
+  AREA:{u:'m²',r:[0,1e4],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Área (m²)'},
+  TS:{u:'°C',r:[-20,80],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Temp. seca (°C)'},
+  TH:{u:'°C',r:[-20,80],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Temp. húmeda (°C)'},
+  T_EFE:{u:'°C',r:[-20,80],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Temperatura efectiva (°C)'},
+  HR:{u:'%',r:[0,100],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Humedad relativa (%)'},
+  CAUDAL_CH4:{u:'m³/min',r:[0,1e4],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Caudal CH₄ (m³/min)'},
+  VOL_CH4:{u:'m³',r:[0,1e7],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Volumen CH₄ (m³)'},
+  EMISION:{u:'m³/ton',r:[0,1e4],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Emisión específica (m³/ton)'},
+  PRODUCCION:{u:'ton',r:[0,1e6],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Producción (ton)'},
+  TIEMPO:{u:'min',r:[0,1e4],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:'Tiempo evaluado (min)'}
+};
+const cfg=g=>CAT[g]||{u:null,r:[0,Infinity],s:'a',ok:0,w:0,t:{},familia:'aux',nombre:g,ref:''};
+const esGas=g=>cfg(g).familia==='gas';
+const SEV={alerta:1,limite:2,critico:3,evacuacion:4,minimo:4};
+const ETQ=['Normal','Alerta','Límite','Crítico','Evacuación'];
+const SEV_CLS=['sev-normal','sev-alerta','sev-limite','sev-critico','sev-evac'];
+const SEV_ICO=['●','▲','■','◆','✖'];
+const CLS=['Bajo','Medio','Alto','Crítico'];
+const CLS_SEV=['sev-normal','sev-alerta','sev-limite','sev-critico'];
+const COL=['#16a34a','#ca8a04','#ea580c','#dc2626','#991b1b'];
+const PAL=['#2563eb','#7c3aed','#0891b2','#059669','#d97706','#be123c','#4f46e5','#0d9488','#db2777','#65a30d'];
+
+function limitePermisible(g){
+  const t=cfg(g).t||{};
+  if(cfg(g).s==='b') return Number.isFinite(t.minimo)?t.minimo:(t.alerta??null);
+  return Number.isFinite(t.limite)?t.limite:(Number.isFinite(t.critico)?t.critico:(t.alerta??null));
+}
+function cumpleLimite(g,v){
+  const lim=limitePermisible(g);
+  if(!Number.isFinite(lim)||!Number.isFinite(v))return null;
+  return cfg(g).s==='b' ? v>=lim : v<=lim;
+}
+
+// =====================================================================
+// FECHAS
+// =====================================================================
+function nombreHojaFecha(hoja){
+  if(!hoja)return null;
+  const m=String(hoja).match(/(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
+  if(!m)return null;
+  let [_,d,mo,y]=m; y=+y; if(y<100)y+=2000;
+  const dd=+d, mm=+mo;
+  if(dd<1||dd>31||mm<1||mm>12)return null;
+  return new Date(Date.UTC(y,mm-1,dd)).toISOString().slice(0,10);
+}
+function parseFechaExcel(v){
+  if(v==null||v==='')return null;
+  const s=String(v).trim();
+  if(!s||s.startsWith('='))return null;
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
+  const n=parseFloat(s);
+  if(Number.isFinite(n)&&n>30000&&n<60000){
+    return new Date(Date.UTC(1899,11,30)+n*86400000).toISOString().slice(0,10);
+  }
+  return null;
+}
+function num(v){
+  if(v==null||v==='')return NaN;
+  const s=String(v).trim();
+  if(s.startsWith('='))return NaN;
+  const x=parseFloat(s.replace(',','.'));
+  return Number.isFinite(x)?x:NaN;
+}
+
+// =====================================================================
+// PARSER ESTADÍSTICA
+// =====================================================================
+function parseEstadistica(matriz, nombreHoja, nombreArchivo){
+  let hIdx=-1, H=[];
+  for(let i=0;i<Math.min(12,matriz.length);i++){
+    const fila=(matriz[i]||[]).map(c=>String(c??'').trim().toUpperCase());
+    if(fila.some(c=>c==='FECHA') && fila.some(c=>c.includes('UBICACI')) && fila.some(c=>c.includes('CH4')||c.includes('CH₄'))){hIdx=i;H=fila;break}
+  }
+  if(hIdx<0)return[];
+  const findCol=(...aliases)=>{
+    for(const a of aliases){const i=H.findIndex(h=>h.includes(a));if(i>=0)return i}
+    return -1;
+  };
+  const idx={
+    fecha:findCol('FECHA'),ubic:findCol('UBICACI'),abs:findCol('ABSCISA'),
+    Q:findCol('CAUDAL DE AIRE','CAUDAL AIRE'),CH4:findCol('CH4','CH₄'),
+    tiempo:findCol('TIEMPO'),produccion:findCol('PRODUCCION','PRODUCCIÓN'),
+    caudalCH4:findCol('CAUDAL CH4','CAUDAL CH₄'),volCH4:findCol('VOLUMEN'),
+    emision:findCol('EMISION','EMISIÓN')
+  };
+  const entidad = nombreArchivo
+    ? nombreArchivo.replace(/\.(xlsx|xls|csv|txt)$/i,'').replace(/^Estad[íi]stica\s+Concentraciones\s+de\s+Metano\s+/i,'').replace(/^\s+|\s+$/g,'')
+    : (nombreHoja||'Estadística');
+  const out=[];
+  let fechaActual=null, prodActual=null;
+  for(let i=hIdx+1;i<matriz.length;i++){
+    const fila=matriz[i]||[];
+    if(!fila.some(c=>c!==''&&c!=null))continue;
+    const f=parseFechaExcel(fila[idx.fecha])||fechaActual;
+    if(f)fechaActual=f;
+    if(!f)continue;
+    const pRaw=fila[idx.produccion];
+    let prod=num(pRaw);
+    if(!Number.isFinite(prod))prod=prodActual;
+    if(Number.isFinite(prod)&&prod>0)prodActual=prod;
+    const ubic=String(fila[idx.ubic]??'').trim();
+    if(!ubic)continue;
+    const abs=String(fila[idx.abs]??'').trim();
+    const ubiFinal=abs?`${ubic} · ${abs}`:ubic;
+    const pushVar=(g,v)=>{
+      if(Number.isFinite(v)&&v>=cfg(g).r[0]&&v<=cfg(g).r[1]){
+        out.push({f:fechaActual,entidad,ubic:ubiFinal,g,v,u:cfg(g).u,hoja:nombreHoja});
+      }
+    };
+    pushVar('CH4',num(fila[idx.CH4]));
+    pushVar('Q',num(fila[idx.Q]));
+    pushVar('TIEMPO',num(fila[idx.tiempo]));
+    pushVar('PRODUCCION',Number.isFinite(prod)?prod:NaN);
+    pushVar('CAUDAL_CH4',num(fila[idx.caudalCH4]));
+    pushVar('VOL_CH4',num(fila[idx.volCH4]));
+    pushVar('EMISION',num(fila[idx.emision]));
+    ['O2','CO','CO2','H2S','NO2','SO2'].forEach(g=>{
+      const i2=H.findIndex(h=>h.includes(g));
+      if(i2>=0)pushVar(g,num(fila[i2]));
+    });
+  }
+  return out;
+}
+
+// =====================================================================
+// PARSER AFOROS
+// =====================================================================
+function layoutAforoPorPosicion(){
+  return {noEst:0,ubic:1,fecha:2,abs:8,vel:18,Q:19,ts:20,th:21,h2s:22,co2:23,ch4:24,co:25,no2:26,o2:27,area:31,hr:32,tefe:33};
+}
+function parseAforos(matriz, nombreHoja, nombreArchivo){
+  const out=[];
+  let proyecto='Proyecto', fecha=null;
+  let headers=null;
+  const entidadFallback = nombreArchivo
+    ? nombreArchivo.replace(/\.(xlsx|xls|csv|txt)$/i,'').trim()
+    : (nombreHoja||'Aforo');
+  for(let i=0;i<matriz.length;i++){
+    const fila=(matriz[i]||[]).map(c=>c??'');
+    const filaStr=fila.map(c=>String(c).trim());
+    const filaNorm=filaStr.map(s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase());
+    const idxCentro=filaNorm.findIndex(c=>c.startsWith('CENTRO DE TRABAJO'));
+    if(idxCentro>=0){
+      const val=filaStr.slice(idxCentro+1).find(c=>/proyecto|cabrerita/i.test(c));
+      proyecto = val ? val.replace(/^Proyecto\s+/i,'Proyecto ').trim() : entidadFallback;
+      fecha=null;headers=null;
+      continue;
+    }
+    const idxFechaReal=filaNorm.findIndex(c=>c.includes('FECHA DE REALIZACION'));
+    if(idxFechaReal>=0){
+      const cand=filaStr.slice(idxFechaReal+1).find(c=>/^\d{4}-\d{2}-\d{2}/.test(c)||/^\d{1,2}[\/.-]\d{1,2}/.test(c));
+      if(cand){const ff=parseFechaExcel(cand);if(ff)fecha=ff}
+      continue;
+    }
+    const tieneNoEst=filaNorm.some(c=>c.includes('NO ESTACION')||c==='N ESTACION');
+    const tieneUbic=filaNorm.some(c=>c==='UBICACION');
+    const tieneVel=filaNorm.some(c=>c.includes('VELOCIDAD'));
+    const tieneQ=filaNorm.some(c=>c.includes('CAUDAL'));
+    const tieneGases=filaNorm.some(c=>c.includes('H2S')||c.includes('CH4')||c.includes('CH₄'));
+    if(tieneNoEst && tieneUbic && (tieneVel||tieneQ||tieneGases)){
+      const H=filaNorm;
+      const findCol=(...aliases)=>{
+        for(const a of aliases){const idx=H.findIndex(h=>h.includes(a));if(idx>=0)return idx}
+        return -1;
+      };
+      const porNombre={
+        noEst:findCol('NO ESTACION','N ESTACION'),ubic:findCol('UBICACION'),
+        fecha:findCol('FECHA DE AFORO','FECHA'),abs:findCol('ENTRE NODOS','ABS'),
+        vel:findCol('VELOCIDAD'),Q:findCol('CAUDAL'),
+        ts:findCol('TS('),th:findCol('TH('),
+        h2s:findCol('H2S','H₂S'),co2:findCol('CO2','CO₂'),ch4:findCol('CH4','CH₄'),
+        co:findCol('CO '),no2:findCol('NO2','NO₂'),o2:findCol('O2','O₂'),
+        area:findCol('AREA'),hr:findCol('HR'),tefe:findCol('T.EFE','TEFE')
+      };
+      const pos=layoutAforoPorPosicion();
+      headers={};
+      for(const k in pos){ headers[k] = (porNombre[k]>=0 ? porNombre[k] : pos[k]); }
+      if(headers.ubic<0 || headers.ch4<0) headers=pos;
+      continue;
+    }
+    if(headers){
+      const ubic=filaStr[headers.ubic];
+      if(!ubic)continue;
+      const cols=[headers.vel,headers.Q,headers.ts,headers.th,headers.h2s,headers.co2,headers.ch4,headers.co,headers.no2,headers.o2,headers.area,headers.hr,headers.tefe];
+      const tieneNum=cols.some(c=>c>=0&&Number.isFinite(num(fila[c])));
+      if(!tieneNum)continue;
+      const entidad=proyecto||entidadFallback;
+      const abs=filaStr[headers.abs]||'';
+      const ubiFinal=abs?`${ubic} · ${abs}`:ubic;
+      const fechaFinal=parseFechaExcel(filaStr[headers.fecha])||fecha||nombreHojaFecha(nombreHoja)||new Date().toISOString().slice(0,10);
+      const pushVar=(g,v)=>{
+        if(Number.isFinite(v)&&v>=cfg(g).r[0]&&v<=cfg(g).r[1]){
+          out.push({f:fechaFinal,entidad,ubic:ubiFinal,g,v,u:cfg(g).u,hoja:nombreHoja});
+        }
+      };
+      pushVar('VELOCIDAD',num(fila[headers.vel]));
+      pushVar('Q',num(fila[headers.Q]));
+      pushVar('TS',num(fila[headers.ts]));
+      pushVar('TH',num(fila[headers.th]));
+      pushVar('H2S',num(fila[headers.h2s]));
+      pushVar('CO2',num(fila[headers.co2]));
+      pushVar('CH4',num(fila[headers.ch4]));
+      pushVar('CO',num(fila[headers.co]));
+      pushVar('NO2',num(fila[headers.no2]));
+      pushVar('O2',num(fila[headers.o2]));
+      pushVar('HR',num(fila[headers.hr]));
+      pushVar('T_EFE',num(fila[headers.tefe]));
+      pushVar('AREA',num(fila[headers.area]));
+    }
+  }
+  return out;
+}
+
+// =====================================================================
+// PARSER CSV PLANO
+// =====================================================================
+function parsePlanoGenerico(matriz, nombreHoja, nombreArchivo){
+  let hIdx=-1, H=[];
+  for(let i=0;i<Math.min(10,matriz.length);i++){
+    const h=(matriz[i]||[]).map(c=>String(c??'').trim().toUpperCase());
+    if(h.some(x=>x.includes('FECHA')) && h.some(x=>x.includes('GAS')||x.includes('CH4'))){hIdx=i;H=h;break}
+  }
+  if(hIdx<0) throw Error('CSV plano: no se encontró cabecera fecha/gas.');
+  const findCol=(...aliases)=>{
+    for(const a of aliases){const idx=H.findIndex(h=>h.includes(a));if(idx>=0)return idx}
+    return -1;
+  };
+  const iF=findCol('FECHA'), iT=findCol('TUNEL','UBICACI','ENTIDAD','PROYECTO'),
+        iG=findCol('GAS','PARAMETRO','VARIABLE','CH4'),
+        iV=findCol('VALOR','LECTURA','MEDICI'),
+        iU=findCol('UNIDAD');
+  if(iF<0||iV<0) throw Error('Faltan columnas Fecha o Valor.');
+  const entidad = nombreArchivo ? nombreArchivo.replace(/\.[^.]+$/,'') : nombreHoja;
+  const out=[];
+  for(let i=hIdx+1;i<matriz.length;i++){
+    const r=matriz[i]||[];
+    const f=parseFechaExcel(r[iF])||String(r[iF]||'').slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}/.test(f)) continue;
+    const ubi=iT>=0?String(r[iT]||'').trim():'General';
+    const g=iG>=0?String(r[iG]||'').trim().toUpperCase():'CH4';
+    const v=parseFloat(String(r[iV]||'').replace(',','.'));
+    if(!Number.isFinite(v)) continue;
+    const unidad=iU>=0?String(r[iU]||'').trim():'';
+    const gNorm=g.replace(/[₀-₉]/g,x=>x.charCodeAt(0)-8320).replace(/[^A-Z0-9_]/g,'')||'CH4';
+    out.push({f:f.slice(0,10),entidad,ubic:ubi,g:gNorm,v,u:unidad||cfg(gNorm).u,hoja:nombreHoja});
+  }
+  return out;
+}
+
+// =====================================================================
+// CSV
+// =====================================================================
+function csv(t){
+  t=t.replace(/^\uFEFF/,'').replace(/^[\s\u200B]+/,'');
+  const l=t.split(/\r?\n/)[0]||'';
+  const sp=[';','\t',','].map(s=>[s,l.split(s).length]).sort((a,b)=>b[1]-a[1])[0][0];
+  const R=[];let r=[],c='',q=0;
+  for(let i=0;i<t.length;i++){
+    const h=t[i];
+    if(q){if(h=='"'){if(t[i+1]=='"'){c+='"';i++}else q=0}else c+=h}
+    else if(h=='"')q=1;
+    else if(h==sp){r.push(c);c=''}
+    else if(h=='\n'||h=='\r'){if(h=='\r'&&t[i+1]=='\n')i++;r.push(c);R.push(r);r=[];c=''}
+    else c+=h;
+  }
+  if(c||r.length){r.push(c);R.push(r)}
+  return R.filter(x=>x.some(y=>String(y).trim()));
+}
+
+// =====================================================================
+// DETECCIÓN DE TIPO
+// =====================================================================
+function detectarTipo(matriz){
+  if(!matriz||!matriz.length)return'desconocido';
+  const flat=matriz.slice(0,80).flat().map(s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase());
+  if(flat.some(c=>c.includes('REGISTRO DE AFOROS')) || flat.some(c=>c.includes('FORMATO DE REGISTRO DE AFOROS'))) return 'aforo';
+  for(let i=0;i<Math.min(12,matriz.length);i++){
+    const H=(matriz[i]||[]).map(s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase());
+    if(H.some(h=>h==='FECHA') && H.some(h=>h.includes('UBICACI')) && H.some(h=>h.includes('CH4')||h.includes('CH₄'))) return 'estadistica';
+  }
+  for(let i=0;i<Math.min(5,matriz.length);i++){
+    const H=(matriz[i]||[]).map(s=>String(s??'').toUpperCase().trim());
+    if(H.some(h=>h==='FECHA')&&H.some(h=>h==='GAS')&&H.some(h=>h==='VALOR')) return 'plano';
+  }
+  return 'desconocido';
+}
+
+// =====================================================================
+// LECTURA
+// =====================================================================
+async function leerArchivo(file){
+  const buf=await file.arrayBuffer();
+  const esExcel=/\.(xlsx|xls)$/i.test(file.name);
+  const todas=[];
+  if(esExcel){
+    const wb=XLSX.read(buf,{type:'array'});
+    for(const hoja of wb.SheetNames){
+      const ws=wb.Sheets[hoja];
+      const matriz=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+      if(!matriz.length)continue;
+      const tipo=detectarTipo(matriz);
+      let rows=[];
+      try{
+        if(tipo==='aforo')          rows=parseAforos(matriz,hoja,file.name);
+        else if(tipo==='estadistica') rows=parseEstadistica(matriz,hoja,file.name);
+        else if(tipo==='plano')     rows=parsePlanoGenerico(matriz,hoja,file.name);
+        else{
+          try{rows=parseEstadistica(matriz,hoja,file.name)}catch(e1){rows=[]}
+          if(!rows.length)try{rows=parseAforos(matriz,hoja,file.name)}catch(e2){rows=[]}
+        }
+      }catch(e){console.warn('Hoja "'+hoja+'" ('+tipo+'):',e.message)}
+      todas.push(...rows);
+    }
+    if(!todas.length)throw Error('No se extrajo ninguna fila válida. Verifica cabecera con Fecha/Ubicación/CH₄ o registro FOR-SIG-190.');
+    return todas;
+  }
+  let txt=await file.text();
+  txt=txt.replace(/^\uFEFF/,'').replace(/^[\s\u200B]+/,'');
+  const M=csv(txt);
+  if(!M.length) throw Error('El archivo está vacío.');
+  const tipo=detectarTipo(M);
+  try{
+    if(tipo==='estadistica') return parseEstadistica(M,'CSV',file.name);
+    if(tipo==='aforo')       return parseAforos(M,'CSV',file.name);
+    if(tipo==='plano')       return parsePlanoGenerico(M,'CSV',file.name);
+  }catch(e){console.warn('Tipo "'+tipo+'" falló:',e.message)}
+  try{return parseEstadistica(M,'CSV',file.name)}catch(e1){}
+  try{return parseAforos(M,'CSV',file.name)}catch(e2){}
+  throw Error('No se pudo interpretar el archivo.');
+}
+
+// =====================================================================
+// VALIDACIÓN
+// =====================================================================
+function validar(raw){
+  const Q=[], o=[], seen=new Set();
+  for(const r of raw){
+    if(!r.f||!r.g||!Number.isFinite(r.v)) continue;
+    const k=[r.f,r.entidad,r.ubic,r.g,r.v].join('|');
+    if(seen.has(k)) continue;
+    seen.add(k);
+    o.push(r);
+  }
+  const gases = [...new Set(o.filter(r=>esGas(r.g)).map(r=>r.g))].sort();
+  const aux   = [...new Set(o.filter(r=>!esGas(r.g)).map(r=>r.g))].sort();
+  const ent   = [...new Set(o.map(r=>r.entidad))].sort();
+  Q.push(['in',`${raw.length} lecturas → ${o.length} válidas`]);
+  Q.push(['in','Gases detectados: '+(gases.length?gases.map(g=>cfg(g).nombre||g).join(', '):'ninguno')]);
+  if(aux.length) Q.push(['in','Variables auxiliares: '+aux.map(g=>cfg(g).nombre||g).join(', ')]);
+  Q.push(['in','Entidades detectadas: '+ent.join(', ')]);
+  if(!gases.length) Q.push(['er','No se detectaron gases. El archivo debe tener al menos una columna de CH₄, O₂, CO, CO₂, H₂S, NO₂ o SO₂ con valores numéricos.']);
+  if(!o.length) throw Error('El archivo no contiene filas válidas.');
+  return {o,Q,n:raw.length,gasList:gases,auxList:aux,entidades:ent};
+}
+
+// =====================================================================
+// ESTADÍSTICA
+// =====================================================================
+const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+const sd=a=>{if(a.length<2)return NaN;const m=mean(a);return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/(a.length-1))};
+const qt=(a,p)=>{const s=[...a].sort((x,y)=>x-y),i=(s.length-1)*p,l=Math.floor(i);return s[l]+(s[Math.ceil(i)]-s[l])*(i-l)};
+
+function lnG(x){
+  const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,.1208650973866179e-2,-.5395239384953e-5];
+  let y=x,t=x+5.5;t-=(x+.5)*Math.log(t);
+  let s=1.000000000190015;
+  for(let j=0;j<6;j++)s+=c[j]/++y;
+  return -t+Math.log(2.5066282746310005*s/x);
+}
+function bcf(a,b,x){
+  const qab=a+b,qap=a+1,qam=a-1,T=1e-30;
+  let c=1,d=1-qab*x/qap;if(Math.abs(d)<T)d=T;d=1/d;
+  let h=d;
+  for(let m=1;m<=200;m++){
+    const m2=2*m;let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d;if(Math.abs(d)<T)d=T;c=1+aa/c;if(Math.abs(c)<T)c=T;d=1/d;h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d;if(Math.abs(d)<T)d=T;c=1+aa/c;if(Math.abs(c)<T)c=T;d=1/d;
+    const e=d*c;h*=e;if(Math.abs(e-1)<3e-7)break;
+  }
+  return h;
+}
+function bi(x,a,b){
+  if(x<=0)return 0;if(x>=1)return 1;
+  const bt=Math.exp(lnG(a+b)-lnG(a)-lnG(b)+a*Math.log(x)+b*Math.log(1-x));
+  return x<(a+1)/(a+b+2)?bt*bcf(a,b,x)/a:1-bt*bcf(b,a,1-x)/b;
+}
+function pe(x,y){
+  const mx=mean(x),my=mean(y);
+  let a=0,b=0,c=0;
+  for(let i=0;i<x.length;i++){a+=(x[i]-mx)*(y[i]-my);b+=(x[i]-mx)**2;c+=(y[i]-my)**2}
+  return b>0&&c>0?a/Math.sqrt(b*c):NaN;
+}
+function pv(r,n){
+  if(!(n>=3)||!Number.isFinite(r))return NaN;
+  const df=n-2;if(df<=0)return NaN;
+  return bi(df/(df+r*r*df/(1-r*r+1e-15)),df/2,.5);
+}
+function rk(a){
+  const o=a.map((v,i)=>[v,i]).sort((p,q)=>p[0]-q[0]),r=Array(a.length);
+  for(let i=0;i<o.length;){let j=i;while(j+1<o.length&&o[j+1][0]==o[i][0])j++;for(let k=i;k<=j;k++)r[o[k][1]]=(i+j)/2+1;i=j+1}
+  return r;
+}
+function corr(ser,names,sp){
+  const R=[],P=[];
+  names.forEach((a,i)=>{
+    R[i]=[];P[i]=[];
+    names.forEach((b,j)=>{
+      if(i==j){R[i][j]=1;P[i][j]=0;return}
+      const A=new Map(ser[a].p),x=[],y=[];
+      ser[b].p.forEach(([d,v])=>{if(A.has(d)){x.push(A.get(d));y.push(v)}});
+      const r=x.length>=3?(sp?pe(rk(x),rk(y)):pe(x,y)):NaN;
+      R[i][j]=r;P[i][j]=pv(r,x.length);
+    });
+  });
+  return{R,P};
+}
+function fit(x,y,d){
+  const s=Math.max(...x.map(Math.abs))||1,X=x.map(v=>v/s),A=[];
+  for(let i=0;i<=d;i++){
+    A[i]=[];
+    for(let j=0;j<=d;j++)A[i][j]=X.reduce((t,v)=>t+v**(i+j),0);
+    A[i][d+1]=X.reduce((t,v,k)=>t+y[k]*v**i,0);
+  }
+  for(let i=0;i<=d;i++){
+    let m=i;
+    for(let r=i+1;r<=d;r++)if(Math.abs(A[r][i])>Math.abs(A[m][i]))m=r;
+    [A[i],A[m]]=[A[m],A[i]];
+    for(let r=i+1;r<=d;r++){const f=A[r][i]/A[i][i];for(let c=i;c<=d+1;c++)A[r][c]-=f*A[i][c]}
+  }
+  const c=Array(d+1);
+  for(let i=d;i>=0;i--)c[i]=(A[i][d+1]-A.slice(i+1,d+1).reduce((t,row,k)=>t+row[i+1+k]*c[i+1+k],0))/A[i][i];
+  return v=>c.reduce((t,k,i)=>t+k*(v/s)**i,0);
+}
+function proy(p,me,H,W){
+  const n=p.length;
+  if(n<1)return null;
+  const x=p.map(a=>a[0]-p[0][0]),y=p.map(a=>a[1]),
+        last=p[n-1][0],fx=[...Array(H)].map((_,i)=>last+i+1),xf=fx.map(v=>v-p[0][0]);
+  if(n===1){const v=y[0];return{fx,y:fx.map(()=>v),lo:fx.map(()=>v),hi:fx.map(()=>v),r2:NaN,pp:NaN,sl:0,n,m:'const',ok:false,conf:'MUY BAJA',nota:'Con 1 punto se mantiene el valor actual.'}}
+  if(n===2){
+    const sl=(y[1]-y[0])/(x[1]-x[0]||1);const yh=xf.map(v=>y[0]+sl*v);
+    return{fx,y:yh,lo:yh,hi:yh,r2:1,pp:pv(pe(x,y),n),sl,n,m:'lineal(2pt)',ok:false,conf:'MUY BAJA',nota:'Con 2 puntos la recta es exacta pero sin validez estadística.'};
+  }
+  let m=me;
+  if(m==='a')m=(n>=6)?'p':(n>=3?'l':'m');
+  if(m==='p'&&n<6)m='l';
+  const st=y.reduce((t,v)=>t+(v-mean(y))**2,0);
+  let yh,sg,r2,pp=NaN,sl=NaN;
+  if(m==='m'){
+    const k=Math.min(W,n-1),pr=[],rs=[];
+    for(let i=k;i<n;i++){pr.push(mean(y.slice(i-k,i)));rs.push(y[i]-pr[pr.length-1])}
+    sg=rs.length>=2?sd(rs):NaN;
+    yh=xf.map(()=>mean(y.slice(-k)));
+    const t2=pr.reduce((t,_,i)=>t+(y[i+k]-mean(y.slice(k)))**2,0);
+    r2=t2>0?1-rs.reduce((t,v)=>t+v*v,0)/t2:NaN;
+  } else {
+    const d=m==='p'?2:1,f=fit(x,y,d),rs=x.map((v,i)=>y[i]-f(v));
+    sg=Math.sqrt(rs.reduce((t,v)=>t+v*v,0)/Math.max(n-d-1,1));
+    yh=xf.map(f);
+    r2=st>0?1-rs.reduce((t,v)=>t+v*v,0)/st:NaN;
+    if(d===1){sl=(f(1)-f(0));pp=pv(pe(x,y),n)}
+  }
+  const ok=(n>=8&&r2>=.3&&(m!='l'||pp<.05));
+  const conf=n>=8?(ok?'ALTA':'MEDIA'):(n>=5?'MEDIA':'BAJA');
+  return{fx,y:yh,lo:yh.map(v=>v-1.96*(Number.isFinite(sg)?sg:0)),hi:yh.map(v=>v+1.96*(Number.isFinite(sg)?sg:0)),r2,pp,sl,n,m,ok,conf,nota:n<5?'Con pocos puntos la banda es amplia y la proyección referencial.':''};
+}
+
+// =====================================================================
+// IPRA
+// =====================================================================
+const sevV=(g,v,th)=>{let s=0;for(const[n,u]of Object.entries(th[g]||{})){if(cfg(g).s=='b'?v<u:v>=u)s=Math.max(s,SEV[n]||1)}return s};
+function riesgo(g,v,th,mx){
+  const u=Object.values(th[g]||{}),C=cfg(g);
+  if(!u.length)return mx>0?Math.min(v/mx,1):0;
+  const r=C.s=='b'?(C.ok-v)/(C.ok-Math.min(...u)):(v-C.ok)/(Math.max(...u)-C.ok);
+  return Math.max(0,Math.min(1,r));
+}
+function ipra(ser,entidades,gases,w,th,sm){
+  const out=[],mx={};
+  gases.forEach(g=>{
+    let m=0;
+    entidades.forEach(t=>{Object.values(ser).forEach(s=>{if(s.entidad===t&&s.g===g)s.p.forEach(p=>{if(p[1]>m)m=p[1]})})});
+    mx[g]=m;
+  });
+  entidades.forEach(t=>{
+    const D={};
+    Object.values(ser).forEach(s=>{
+      if(s.entidad!==t||!esGas(s.g))return;
+      s.p.forEach(([d,v])=>{D[d]=D[d]||{};D[d][s.g]=D[d][s.g]||[];D[d][s.g].push(v)});
+    });
+    Object.keys(D).map(Number).sort((a,b)=>a-b).forEach(d=>{
+      let s=0,den=0,sv=0;const ap={};
+      for(const g in D[d]){
+        if(!esGas(g)||!(w[g]>0))continue;
+        const vmax=Math.max(...D[d][g]);
+        const r=riesgo(g,vmax,th,mx[g]);
+        ap[g]=w[g]*r;s+=w[g]*r;den+=w[g];sv=Math.max(sv,sevV(g,vmax,th));
+      }
+      if(!den)return;
+      const v=s/den;let c=v<.25?0:v<.5?1:v<.75?2:3;
+      const base=c;
+      if(sm)c=Math.max(c,[0,1,2,2,3][sv]);
+      out.push({d,t,v,c:CLS[c],forz:c!=base,ap});
+    });
+  });
+  return out;
+}
+const dstr=d=>new Date(d*864e5).toISOString().slice(0,10);
+const dm=d=>{const s=dstr(d);return s.slice(8)+'/'+s.slice(5,7)};
+const f3=n=>Number.isFinite(n)?(Math.abs(n)>=100?n.toFixed(1):n.toFixed(3)):'—';
+
+// =====================================================================
+// SVG
+// =====================================================================
+function chart(opts){
+  const W=620,H=opts.H||280,m={l:52,r:12,t:16,b:34};
+  let xs=[],ys=[];
+  opts.L.forEach(l=>{l.p.forEach(p=>{xs.push(p[0]);ys.push(p[1])});(l.b||[]).forEach(b=>{xs.push(b[0]);ys.push(b[1],b[2])})});
+  if(!xs.length)return '<div class="empty">Sin datos</div>';
+  const x0=Math.min(...xs),x1=Math.max(...xs);
+  let lo=Math.min(...ys),hi=Math.max(...ys);
+  const sp=Math.max(hi-lo,1e-9),fu=[];
+  (opts.h||[]).forEach(h=>{if(h.y>=lo-6*sp&&h.y<=hi+6*sp){lo=Math.min(lo,h.y);hi=Math.max(hi,h.y);h.on=1}else fu.push(h.l)});
+  if(opts.limite&&Number.isFinite(opts.limite.y)){
+    if(opts.limite.y>=lo-6*sp&&opts.limite.y<=hi+6*sp){
+      lo=Math.min(lo,opts.limite.y);hi=Math.max(hi,opts.limite.y);opts.limite.on=1;
+    }
+  }
+  if(opts.y0!=null){lo=opts.y0;hi=opts.y1}else{const e=(hi-lo||1)*.06;lo-=e;hi+=e}
+  const X=x=>m.l+(x-x0)/(x1-x0||1)*(W-m.l-m.r),Y=y=>H-m.b-(y-lo)/(hi-lo)*(H-m.t-m.b);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.a||'Gráfico')}" font-size="11">`;
+  if(opts.zonas){
+    opts.zonas.forEach(z=>{
+      s+=`<rect x="${m.l}" width="${W-m.l-m.r}" y="${Y(z.y1)}" height="${Math.max(0,Y(z.y0)-Y(z.y1))}" fill="${z.c}" opacity=".10"/>`;
+      if(z.label)s+=`<text x="${W-m.r-6}" y="${Y((z.y0+z.y1)/2)+3}" text-anchor="end" fill="${z.c}" opacity=".9" font-size="10">${esc(z.label)}</text>`;
+    });
+  }
+  for(let i=0;i<=4;i++){
+    const v=lo+(hi-lo)*i/4;
+    s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="currentColor" opacity=".1"/><text x="${m.l-6}" y="${Y(v)+3}" text-anchor="end" fill="currentColor" opacity=".7">${v.toPrecision(3)}</text>`;
+  }
+  for(let i=0;i<=5;i++){
+    const v=x0+(x1-x0)*i/5;
+    s+=`<text x="${X(v)}" y="${H-14}" text-anchor="middle" fill="currentColor" opacity=".7">${dm(Math.round(v))}</text>`;
+  }
+  (opts.bands||[]).forEach(b=>s+=`<rect x="${m.l}" width="${W-m.l-m.r}" y="${Y(b[1])}" height="${Y(b[0])-Y(b[1])}" fill="${b[2]}" opacity=".1"/>`);
+  (opts.h||[]).filter(h=>h.on).forEach(h=>s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(h.y)}" y2="${Y(h.y)}" stroke="${h.c}" stroke-dasharray="4 4" stroke-width="1.4"/>`);
+  if(opts.limite&&opts.limite.on){
+    s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(opts.limite.y)}" y2="${Y(opts.limite.y)}" stroke="${opts.limite.c}" stroke-width="2"/>`;
+    s+=`<text x="${W-m.r-4}" y="${Y(opts.limite.y)-4}" text-anchor="end" fill="${opts.limite.c}" font-weight="700" font-size="10">${esc(opts.limite.label||'Límite')}</text>`;
+  }
+  opts.L.forEach(l=>{
+    if(l.b)s+=`<polygon fill="${l.c}" opacity=".12" points="${l.b.map(b=>X(b[0])+','+Y(b[2])).join(' ')+' '+[...l.b].reverse().map(b=>X(b[0])+','+Y(b[1])).join(' ')}"/>`;
+    s+=`<polyline fill="none" stroke="${l.c}" stroke-width="2" ${l.d?'stroke-dasharray="5 4"':''} points="${l.p.map(p=>X(p[0])+','+Y(p[1])).join(' ')}"/>`;
+    if(!l.d)l.p.forEach(p=>s+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3" fill="${l.c}"/>`);
+  });
+  s+='</svg>';
+  return s;
+}
+// Gráfica multi-gas para una ubicación
+// Combina todos los gases de la ubicación en un mismo eje, normalizados al rango [0,1] respecto a su límite
+function chartMultiGas(series, ubic, limites){
+  const W=720,H=320,m={l:52,r:12,t:16,b:34};
+  if(!series.length)return '<div class="empty">Sin datos</div>';
+  let xs=[];
+  series.forEach(l=>l.p.forEach(p=>xs.push(p[0])));
+  const x0=Math.min(...xs),x1=Math.max(...xs);
+  // normalizamos cada serie a su límite para comparar en una sola escala 0..1.2
+  const norm=series.map(s=>{
+    const lim=limites[s.g];
+    if(!Number.isFinite(lim)||lim===0) return {c:s.c,n:s.n,p:s.p.map(p=>[p[0],0])};
+    return {c:s.c,n:s.n,p:s.p.map(p=>[p[0],p[1]/lim])};
+  });
+  const lo=0,hi=1.2;
+  const X=x=>m.l+(x-x0)/(x1-x0||1)*(W-m.l-m.r),Y=y=>H-m.b-(y-lo)/(hi-lo)*(H-m.t-m.b);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc('Gases en '+ubic)}" font-size="11">`;
+  // zona permisible (0..1)
+  s+=`<rect x="${m.l}" width="${W-m.l-m.r}" y="${Y(1)}" height="${Y(0)-Y(1)}" fill="#16a34a" opacity=".08"/>`;
+  // línea límite = 1 (100%)
+  s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(1)}" y2="${Y(1)}" stroke="#dc2626" stroke-width="2"/>`;
+  s+=`<text x="${W-m.r-4}" y="${Y(1)-4}" text-anchor="end" fill="#dc2626" font-weight="700" font-size="10">Límite permisible (100 %)</text>`;
+  // eje Y
+  for(let i=0;i<=4;i++){
+    const v=lo+(hi-lo)*i/4;
+    s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="currentColor" opacity=".1"/><text x="${m.l-6}" y="${Y(v)+3}" text-anchor="end" fill="currentColor" opacity=".7">${(v*100).toFixed(0)}%</text>`;
+  }
+  for(let i=0;i<=5;i++){
+    const v=x0+(x1-x0)*i/5;
+    s+=`<text x="${X(v)}" y="${H-14}" text-anchor="middle" fill="currentColor" opacity=".7">${dm(Math.round(v))}</text>`;
+  }
+  norm.forEach(l=>{
+    s+=`<polyline fill="none" stroke="${l.c}" stroke-width="2" points="${l.p.map(p=>X(p[0])+','+Y(p[1])).join(' ')}"/>`;
+    l.p.forEach(p=>s+=`<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="2.6" fill="${l.c}"/>`);
+  });
+  s+='</svg>';
+  return s;
+}
+function sparkline(points,color,{w=120,h=32}={}){
+  if(!points.length)return '';
+  const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const X=x=>2+((x-x0)/(x1-x0||1))*(w-4),Y=y=>h-2-((y-y0)/(y1-y0||1))*(h-4);
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true" style="display:block"><polyline fill="none" stroke="${color}" stroke-width="1.6" points="${points.map(p=>X(p[0])+','+Y(p[1])).join(' ')}"/></svg>`;
+}
+
+// =====================================================================
+// UI
+// =====================================================================
+function setStep(n){
+  $$('.step').forEach(el=>{
+    const k=+el.dataset.step;
+    el.classList.toggle('active',k===n);
+    el.classList.toggle('done',k<n);
+  });
+}
+function construirSelectorEntidades(entidades){
+  const el=$('#entidad-selector');
+  if(!el)return;
+  if(entidades.length<2){el.style.display='none';return}
+  el.style.display='inline-flex';
+  el.innerHTML='<input type="radio" id="ent-all" name="ent" value="all" checked><label for="ent-all">Todas</label>'+
+    entidades.map((e,i)=>`<input type="radio" id="ent-${i}" name="ent" value="${esc(e)}"><label for="ent-${i}">${esc(e)}</label>`).join('');
+  el.querySelectorAll('input').forEach(inp=>inp.onchange=()=>{
+    S.entidadSel=inp.value;
+    if(S.res)ejecutar();
+  });
+}
+function cargar(raw){
+  try{
+    const{o,Q,n,gasList,auxList,entidades}=validar(raw);
+    if(!gasList.length){
+      $('#q').innerHTML='<div class="card"><p style="color:var(--sev-critico);font-weight:600">No se detectaron gases en el archivo.</p></div>';
+      return;
+    }
+    S.rows=o;S.res=null;
+    S.entidades=entidades;S.entidadSel='all';
+    const ic={ok:'✔',in:'ℹ',wa:'⚠',er:'✖'};
+    const colorMap={ok:'var(--sev-normal)',in:'var(--focus)',wa:'var(--sev-alerta)',er:'var(--sev-critico)'};
+    const detalleHTML=Q.map(m=>`<li style="margin:4px 0"><span style="color:${colorMap[m[0]]}">${ic[m[0]]}</span> ${esc(m[1])}</li>`).join('');
+    $('#q').innerHTML=`
+      <div class="card" style="margin:0;background:var(--surface-2);box-shadow:none">
+        <div style="font-weight:600">✔ ${o.length.toLocaleString('es')} lecturas · ${entidades.length} entidad(es) · ${gasList.length} gas(es)${auxList.length?' · '+auxList.length+' auxiliar(es)':''}</div>
+        <details style="margin-top:8px;background:transparent;border:0">
+          <summary style="padding:0;color:var(--focus)">Ver detalle</summary>
+          <ul style="margin:8px 0 0 16px;padding:0;font-size:13px">${detalleHTML}</ul>
+        </details>
+        <div class="nota-legal"><b>Marco normativo:</b> los umbrales por defecto se toman del <b>Decreto 1886 de 2015</b> (Reglamento de Seguridad en el Trabajo Minero) y normas complementarias.</div>
+      </div>`;
+    S.q=Q;
+    construirSelectorEntidades(entidades);
+    $('#step2').hidden=false;setStep(2);
+    const F=o.map(r=>r.f).sort();
+    $('#d0').value=F[0];$('#d1').value=F[F.length-1];
+    $('#gs').innerHTML=
+      (gasList.length?`<div class="label" style="margin-bottom:6px">Gases (participan en IPRA)</div>`:'')+
+      gasList.map(g=>`
+        <div style="display:grid;grid-template-columns:auto 1fr 60px;gap:12px;align-items:center;margin:6px 0">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" data-g="${g}" checked> <b>${esc(cfg(g).nombre||g)}</b>
+            <span class="chip sev-normal" style="font-size:10px;padding:1px 6px">gas</span>
+          </label>
+          <input type="range" data-w="${g}" min="0" max="1" step=".01" value="${cfg(g).w}">
+          <span data-wpct="${g}" style="text-align:right;font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted)"></span>
+        </div>`).join('')+
+      (auxList.length?`<div class="label" style="margin:12px 0 6px">Auxiliares (solo informativas)</div>`:'')+
+      auxList.map(g=>`
+        <div style="display:grid;grid-template-columns:auto 1fr 60px;gap:12px;align-items:center;margin:6px 0;opacity:.6">
+          <label style="display:flex;align-items:center;gap:6px">
+            <input type="checkbox" data-g="${g}" disabled> <span>${esc(cfg(g).nombre||g)}</span>
+            <span class="chip aux" style="font-size:10px;padding:1px 6px">aux</span>
+          </label>
+          <input type="range" data-w="${g}" min="0" max="1" step=".01" value="0" disabled>
+          <span data-wpct="${g}" style="text-align:right;font-size:12px;color:var(--muted)">—</span>
+        </div>`).join('');
+    $('#th').innerHTML=gasList.flatMap(g=>{
+      const ents=Object.entries(cfg(g).t);
+      if(!ents.length)return`<div class="muted" style="font-size:12px;padding:4px 0">${esc(cfg(g).nombre||g)}: sin umbrales</div>`;
+      return`<details><summary>${esc(cfg(g).nombre||g)} <span class="muted" style="font-weight:400">· ${ents.length} umbral${ents.length===1?'':'es'} · ${esc(cfg(g).ref||'')}</span></summary><div>
+        <table><tbody>${ents.map(([nm,u])=>`<tr><td>${esc(nm)}</td><td><input type="number" step="any" data-th="${g}|${nm}" value="${u}" style="width:90px;text-align:right;padding:4px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)"> ${esc(cfg(g).u||'')}</td></tr>`).join('')}</tbody></table>
+      </div></details>`;
+    }).join('');
+    if(!S._gsBound){ $('#gs').addEventListener('input',pesos); S._gsBound=true; }
+    pesos();
+    $('#bRun').disabled=false;$('#bRun2').disabled=false;
+    document.getElementById('step2').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    console.error(e);
+    $('#q').innerHTML='<p style="color:var(--sev-critico);font-weight:600">'+esc(e.message)+'</p>';
+  }
+}
+function sel(a){return $$('['+a+']:checked').map(e=>e.getAttribute(a))}
+function pesos(){
+  const G=sel('data-g').filter(g=>esGas(g)),w={};let s=0;
+  G.forEach(g=>{const el=document.querySelector(`[data-w="${g}"]`);if(el){w[g]=+el.value;s+=w[g]}});
+  $$('[data-w]').forEach(e=>{
+    const g=e.dataset.w;
+    const sp=document.querySelector(`[data-wpct="${g}"]`);
+    if(sp){ if(!esGas(g)){sp.textContent='—';return} sp.textContent=G.includes(g)&&s>0?(w[g]/s*100).toFixed(0)+'%':'—'; }
+  });
+  if(s<=0)G.forEach(g=>w[g]=1/G.length); else G.forEach(g=>w[g]/=s);
+  const st=$('#gstack');
+  if(st){ st.innerHTML=G.map((g,i)=>`<span style="width:${(w[g]*100).toFixed(1)}%;background:${PAL[i%PAL.length]}" title="${esc(cfg(g).nombre||g)} ${(w[g]*100).toFixed(0)}%"></span>`).join(''); }
+  return w;
+}
+
+// =====================================================================
+// EJECUTAR
+// =====================================================================
+function ejecutar(){
+  try{analizar()}
+  catch(e){
+    console.error(e);
+    $('#step3').hidden=false;
+    $('#tabs-l1-content').innerHTML=`<div class="card"><div class="empty"><span class="ico">✖</span><b>No se pudo completar</b><p>${esc(e.message)}</p></div></div>`;
+  }
+}
+function analizar(){
+  const Gsel=sel('data-g').filter(g=>esGas(g));
+  if(!Gsel.length)throw Error('Seleccione al menos un gas.');
+  const d0=$('#d0').value,d1=$('#d1').value;
+  const w=pesos(),th={};
+  Gsel.forEach(g=>th[g]={...cfg(g).t});
+  $$('[data-th]').forEach(e=>{
+    const[g,n]=e.dataset.th.split('|');
+    if(th[g])th[g][n]=+e.value;
+  });
+  let rows=S.rows.filter(r=>Gsel.includes(r.g)&&r.f>=d0&&r.f<=d1);
+  if(S.entidadSel!=='all')rows=rows.filter(r=>r.entidad===S.entidadSel);
+  if(!rows.length)throw Error('La selección no contiene datos de gases.');
+  const entidades=[...new Set(rows.map(r=>r.entidad))].sort();
+  if(!entidades.length)throw Error('No hay entidades para analizar.');
+  const agEl=document.querySelector('[name=ag]:checked');
+  const ag=agEl?agEl.value:'m';
+  const meEl=document.querySelector('[name=me]:checked');
+  const me=meEl?meEl.value:'a';
+  const H=+$('#dy').value;
+  const svEl=$('#sv');
+  const sv=svEl?svEl.checked:true;
+  const W=3;
+  const M={};
+  rows.forEach(r=>{
+    const k=r.entidad+'|'+r.ubic+'|'+r.g,d=Date.parse(r.f)/864e5;
+    ((M[k]=M[k]||{})[d]=M[k][d]||[]).push(r.v);
+  });
+  const ser={};
+  Object.keys(M).sort().forEach(k=>{
+    const [entidad,ubic,g]=k.split('|');
+    ser[k]={
+      p:Object.keys(M[k]).map(Number).sort((a,b)=>a-b).map(d=>[d,ag=='m'?mean(M[k][d]):Math.max(...M[k][d])]),
+      g,ubic,entidad
+    };
+  });
+  const names=Object.keys(ser);
+  if(!names.length)throw Error('No hay series para los filtros seleccionados.');
+  const unicosDias=new Set(Object.values(ser).flatMap(s=>s.p.map(p=>p[0]))).size;
+  const PR={};
+  names.forEach(k=>PR[k]=proy(ser[k].p,me,H,W));
+  const IP=ipra(ser,entidades,Gsel,w,th,sv);
+  const A=[];
+  const un=g=>cfg(g).u||'';
+  names.forEach(k=>{
+    const s=ser[k],v=s.p.map(p=>p[1]),b=cfg(s.g).s=='b',
+          e=Object.entries(th[s.g]||{}).sort((x,y)=>(SEV[y[0]]||1)-(SEV[x[0]]||1)),
+          so=Math.max(...v.map(x=>sevV(s.g,x,th)));
+    for(const[n,u]of e){
+      const vi=s.p.filter(p=>b?p[1]<u:p[1]>=u);
+      if(vi.length){
+        const x=vi.reduce((a,c)=>(b?c[1]<a[1]:c[1]>a[1])?c:a);
+        A.push({s:SEV[n]||1,y:'Observada',g:s.g,entidad:s.entidad,ubic:s.ubic,
+          txt:`${s.g} alcanzó ${ETQ[SEV[n]||1]} (${n} ${u} ${un(s.g)}) en ${vi.length} de ${v.length} día${vi.length===1?'':'s'}; extremo ${f3(x[1])} ${un(s.g)} el ${dstr(x[0])} (${cfg(s.g).ref||'Decreto 1886/2015'}).`});
+        break;
+      }
+    }
+    const p=PR[k];
+    if(p){
+      const sc=Math.max(0,...p.y.map(x=>sevV(s.g,x,th)));
+      if(sc>so)A.push({s:sc,y:'Proyectada',g:s.g,entidad:s.entidad,ubic:s.ubic,
+        txt:`la proyección de ${s.g} cruzaría un umbral (${p.m}, R²=${f3(p.r2)}, n=${p.n}, confiabilidad ${p.conf}).`});
+    }
+  });
+  IP&&entidades.forEach(t=>{
+    const g=IP.filter(r=>r.t==t),gr=g.filter(r=>r.c=='Alto'||r.c=='Crítico');
+    if(gr.length){
+      const l=g[g.length-1];
+      A.push({s:gr.some(r=>r.c=='Crítico')?4:3,y:'IPRA',g:'IPRA',entidad:t,ubic:'',
+        txt:`IPRA de gases Alto/Crítico en ${gr.length} de ${g.length} día${gr.length===1?'':'s'}; último (${dstr(l.d)}): ${f3(l.v)} (${l.c}).`});
+    }
+  });
+  A.sort((a,b)=>b.s-a.s);
+  const D=names.map(k=>{
+    const v=ser[k].p.map(p=>p[1]),q1=qt(v,.25),q3=qt(v,.75),i=q3-q1,m=mean(v),s=sd(v);
+    const lim=limitePermisible(ser[k].g);
+    const ultimo=ser[k].p[ser[k].p.length-1][1];
+    const cumple=cumpleLimite(ser[k].g, ultimo);
+    return{k,entidad:ser[k].entidad,ubic:ser[k].ubic,g:ser[k].g,n:v.length,m,md:qt(v,.5),s,mn:Math.min(...v),p95:qt(v,.95),mx:Math.max(...v),
+      iq:i>0?v.filter(x=>x<q1-1.5*i||x>q3+1.5*i).length:0,z:s>0?v.filter(x=>Math.abs((x-m)/s)>3).length:0,
+      lim,ultimo,cumple};
+  });
+  const CORR={};
+  entidades.forEach(t=>{
+    const tnames=names.filter(k=>ser[k].entidad===t);
+    if(tnames.length>1)CORR[t]={CP:corr(ser,tnames,0),CS:corr(ser,tnames,1),names:tnames};
+  });
+  const OC=[];
+  entidades.forEach(t=>{
+    const a=ser[Object.keys(ser).find(k=>ser[k].entidad===t&&ser[k].g==='CH4')];
+    const b=ser[Object.keys(ser).find(k=>ser[k].entidad===t&&ser[k].g==='O2')];
+    if(a&&b){
+      const B=new Map(b.p),x=[],y=[];
+      a.p.forEach(([d,v])=>{if(B.has(d)){x.push(v);y.push(B.get(d))}});
+      if(x.length>=3){const r=pe(x,y),p=pv(r,x.length);if(Number.isFinite(r))OC.push({t,n:x.length,r,p,tx:p<.05?(r<0?'inversa significativa':'positiva significativa'):'no significativa (p ≥ 0,05)'})}
+      else OC.push({t,n:x.length,r:NaN,p:NaN,tx:'insuficientes pares'});
+    }
+  });
+  const rec={};
+  entidades.forEach(t=>{
+    const arr=[];
+    const sg={};
+    A.filter(a=>a.y=='Observada'&&a.entidad===t).forEach(a=>sg[a.g]=Math.max(sg[a.g]||0,a.s));
+    if(sg.CH4>=4)arr.push({tipo:'evac',txt:`CH₄ ≥ evacuación (D. 1886/2015: 1,4 %) — activar procedimiento de evacuación y desenergizar equipos.`});
+    else if(sg.CH4>=3)arr.push({tipo:'crit',txt:`CH₄ ≥ crítico (D. 1886/2015: 1,0 %) — suspender trabajos con fuentes de ignición y verificar caudal de aire.`});
+    else if(sg.CH4>=1)arr.push({tipo:'alert',txt:`CH₄ sobre alerta (D. 1886/2015: 0,5 %) — aumentar frecuencia de medición y revisar ventilación auxiliar.`});
+    if(sg.O2>=4)arr.push({tipo:'crit',txt:`O₂ bajo mínimo respirable (D. 1886/2015: 19,5 %) — restringir ingreso y usar protección respiratoria autónoma.`});
+    if(sg.CO>=2)arr.push({tipo:'limit',txt:`CO sobre límite (D. 1886/2015: 25 ppm TWA) — investigar motores diésel y voladura.`});
+    if(sg.CO2>=2)arr.push({tipo:'limit',txt:`CO₂ sobre límite (D. 1886/2015: 0,5 %) — revisar renovación de aire en zonas muertas.`});
+    if(sg.H2S>=2)arr.push({tipo:'limit',txt:`H₂S sobre límite (D. 1886/2015: 10 ppm) — revisar ventilación y presencia de sulfuros.`});
+    if(sg.NO2>=2)arr.push({tipo:'limit',txt:`NO₂ sobre límite (D. 1886/2015: 3 ppm) — revisar motores diésel y voladura.`});
+    if(names.some(k=>ser[k].entidad===t&&PR[k]&&PR[k].conf==='BAJA'))arr.push({tipo:'info',txt:`Hay series con confiabilidad BAJA (pocos puntos): úsalas solo como referencia preliminar.`});
+    if(!arr.length)arr.push({tipo:'ok',txt:`Sin alertas de gases con los umbrales del Decreto 1886 de 2015.`});
+    rec[t]=arr;
+  });
+  const recGen='Valida los umbrales contra el Decreto 1886 de 2015 y los procedimientos internos; los promedios diarios pueden ocultar picos.';
+  S.res={G:Gsel,entidades,w,th,ser,names,PR,IP,A,D,CORR,OC,rec,recGen,rows,d0,d1,me,H,ag,un,unicosDias};
+  S.tabL1='resumen';
+  S.tabTunel={};
+  entidades.forEach(t=>S.tabTunel[t]='estado');
+  S.gasSel={};
+  entidades.forEach(t=>S.gasSel[t]=Gsel.find(g=>g==='CH4')||Gsel[0]);
+  S.hidden.clear();
+  setStep(3);
+  $('#step3').hidden=false;
+  render();
+  $('#step3').scrollIntoView({behavior:'smooth',block:'start'});
+  $('#bRep').disabled=false;
+}
+
+// =====================================================================
+// RENDER
+// =====================================================================
+function render(){ if(S.res) renderTabsL1(); }
+function renderTabsL1(){
+  const r=S.res;
+  const tabs=[{id:'resumen',label:'Resumen'}];
+  r.entidades.forEach((t,i)=>tabs.push({id:'ent-'+i,label:t}));
+  if(r.entidades.length>1)tabs.push({id:'comparativa',label:'Comparativa'});
+  tabs.push({id:'guia',label:'Guía de lectura'});
+  const tabsEl=$('#tabs-l1');
+  tabsEl.innerHTML=tabs.map(t=>`<button class="tab${S.tabL1===t.id?' active':''}" data-tab="${t.id}" role="tab">${esc(t.label)}</button>`).join('');
+  tabsEl.querySelectorAll('.tab').forEach(b=>{
+    b.onclick=()=>{S.tabL1=b.dataset.tab;renderTabsL1()};
+  });
+  const c=$('#tabs-l1-content');
+  if(S.tabL1==='resumen')c.innerHTML=renderResumen();
+  else if(S.tabL1==='comparativa')c.innerHTML=renderComparativa();
+  else if(S.tabL1==='guia')c.innerHTML=renderGuia();
+  else{
+    const idx=+S.tabL1.replace('ent-','');
+    const t=r.entidades[idx];
+    c.innerHTML = t ? renderEntidad(t) : '<div class="empty">Entidad no encontrada.</div>';
+  }
+  bindInner();
+}
+function renderResumen(){
+  const r=S.res;
+  let h='<div class="grid grid-2">';
+  r.entidades.forEach(t=>h+=resumenEntidadCard(t));
+  h+='</div>';
+  const top=r.A.filter(a=>a.s>=2).slice(0,3);
+  h+='<div class="card" style="margin-top:var(--space-2)"><h2 class="h-sec">Las 3 alertas de gases más importantes (D. 1886/2015)</h2>';
+  if(top.length){
+    h+='<div style="display:flex;flex-direction:column;gap:8px">';
+    top.forEach(a=>{
+      h+=`<div style="display:flex;gap:12px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:8px">
+        <span class="chip ${SEV_CLS[a.s]}">${SEV_ICO[a.s]} ${ETQ[a.s]}</span>
+        <div style="flex:1">
+          <div><b>${esc(a.entidad)}${a.ubic?' · '+esc(a.ubic):''}</b></div>
+          <div style="font-size:13px;color:var(--muted)">${esc(a.txt)}</div>
+        </div>
+      </div>`;
+    });
+    h+='</div>';
+  } else {
+    h+='<div class="empty"><span class="ico">✓</span>Sin alertas de gases con nivel Límite o superior.</div>';
+  }
+  h+='</div>';
+  return h;
+}
+function resumenEntidadCard(t){
+  const r=S.res;
+  const ip=r.IP.filter(x=>x.t===t);
+  const last=ip.length?ip[ip.length-1]:null;
+  const prev=ip.length>1?ip[ip.length-2]:null;
+  const cls=last?last.c:'—';
+  const clsIdx=CLS.indexOf(cls);
+  const sevCls=clsIdx>=0?CLS_SEV[clsIdx]:'sev-normal';
+  const alT=r.A.filter(a=>a.entidad===t);
+  const chips=['Alerta','Límite','Crítico','Evacuación'].map((lbl,i)=>{
+    const n=alT.filter(a=>a.s===i+1).length;
+    return n?`<span class="chip ${SEV_CLS[i+1]}">${n} ${lbl}</span>`:'';
+  }).join('');
+  const un=g=>cfg(g).u||'';
+  let cerca=null;
+  Object.values(r.ser).forEach(s=>{
+    if(s.entidad!==t||!esGas(s.g))return;
+    const th=r.th[s.g]||{};
+    const ents=Object.entries(th);
+    if(!ents.length)return;
+    const lastV=s.p[s.p.length-1][1];
+    const u=ents[0][1];
+    const d=cfg(s.g).s==='b'?lastV-u:u-lastV;
+    if(!cerca||d<cerca.d)cerca={g:s.g,v:lastV,u,unit:un(s.g),d};
+  });
+  let frase=`En ${t} el riesgo de gases es <b>${cls}</b>`;
+  if(cerca)frase+=`; el gas a vigilar es ${cerca.g} (${cerca.v.toFixed(2)} ${cerca.unit} frente a umbral ${cerca.u} ${cerca.unit})`;
+  frase+='.';
+  const arrow=last&&prev?(last.v>prev.v?'↑':(last.v<prev.v?'↓':'→')):'—';
+  return `<div class="card" style="border-top:4px solid var(--focus)">
+    <div class="row" style="justify-content:space-between">
+      <div><div class="badge">${esc(t)}</div></div>
+      <div class="chip ${sevCls}" style="padding:6px 14px;font-size:14px">${SEV_ICO[clsIdx>=0?clsIdx+1:0]} ${cls}</div>
+    </div>
+    <div class="grid grid-3" style="margin-top:var(--space-2)">
+      <div><div class="label">IPRA gases último</div><div class="kpi">${last?f3(last.v):'—'}</div><div class="muted" style="font-size:12px">${arrow} ${prev?'vs '+f3(prev.v):'sin previo'}</div></div>
+      <div><div class="label">IPRA máximo</div><div class="kpi">${ip.length?f3(Math.max(...ip.map(x=>x.v))):'—'}</div></div>
+      <div><div class="label">Gas más cercano</div><div class="kpi-sm">${cerca?esc(cerca.g):'—'}</div><div class="muted" style="font-size:12px">${cerca?`${cerca.v.toFixed(2)} ${cerca.unit} / ${cerca.u} ${cerca.unit}`:''}</div></div>
+    </div>
+    <div class="row" style="margin-top:var(--space-2)">${chips||'<span class="muted" style="font-size:13px">Sin alertas</span>'}</div>
+    <p style="margin-top:var(--space-2);font-size:14px">${frase}</p>
+    <div class="nota-legal">Límites aplicados: <b>Decreto 1886 de 2015</b>.</div>
+  </div>`;
+}
+function renderEntidad(t){
+  const r=S.res;
+  const sub=['estado','gases','ipra','estadistica','relaciones','proyeccion','acciones'];
+  const labels={estado:'Estado',gases:'Gases por ubicación',ipra:'IPRA',estadistica:'Estadística',relaciones:'Relaciones',proyeccion:'Proyección',acciones:'Acciones'};
+  const active=S.tabTunel[t]||'estado';
+  let h=`<div style="margin-bottom:var(--space-2)"><div class="badge" style="font-size:16px;padding:6px 14px">${esc(t)}</div></div>
+  <div class="pills">`;
+  sub.forEach(s=>h+=`<button class="pill${active===s?' active':''}" data-sub="${s}" data-tunel="${esc(t)}">${labels[s]}</button>`);
+  h+='</div><div>';
+  if(active==='estado')h+=renderEstado(t);
+  else if(active==='gases')h+=renderVariables(t);
+  else if(active==='ipra')h+=renderIPRA(t);
+  else if(active==='estadistica')h+=renderEstadistica(t);
+  else if(active==='relaciones')h+=renderRelaciones(t);
+  else if(active==='proyeccion')h+=renderProyeccion(t);
+  else if(active==='acciones')h+=renderAcciones(t);
+  h+='</div>';
+  return h;
+}
+function renderEstado(t){
+  const r=S.res;
+  const al=r.A.filter(a=>a.entidad===t);
+  if(!al.length)return '<div class="empty"><span class="ico" style="color:var(--sev-normal)">✓</span><b>Sin alertas de gases</b><p class="muted">Los gases se mantienen dentro de los límites del Decreto 1886 de 2015.</p></div>';
+  const grupos=[4,3,2,1].map(s=>({s,list:al.filter(a=>a.s===s)})).filter(g=>g.list.length);
+  let h='';
+  grupos.forEach((g,idx)=>{
+    const open=idx===0?'open':'';
+    h+=`<details ${open}><summary><span class="chip ${SEV_CLS[g.s]}">${SEV_ICO[g.s]} ${ETQ[g.s]}</span> <span class="muted">· ${g.list.length} alerta${g.list.length===1?'':'s'}</span></summary><div>`;
+    g.list.forEach(a=>{
+      h+=`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+        <span class="chip ${SEV_CLS[a.s]}" style="flex-shrink:0">${SEV_ICO[a.s]}</span>
+        <div style="flex:1;font-size:13px">
+          <div><span class="chip" style="background:var(--surface-2);color:var(--muted);font-size:11px">${a.y}</span> <b>${esc(a.ubic||'—')}</b></div>
+          <div class="muted" style="margin-top:2px">${esc(a.txt)}</div>
+        </div>
+      </div>`;
+    });
+    h+='</div></details>';
+  });
+  return h;
+}
+
+// =====================================================================
+// GASES POR UBICACIÓN — una gráfica multi-gas por cada ubicación
+// =====================================================================
+function renderVariables(t){
+  const r=S.res;
+  // Agrupar series por ubicación (solo gases)
+  const porUbic={};
+  Object.entries(r.ser).forEach(([k,s])=>{
+    if(s.entidad!==t||!esGas(s.g))return;
+    (porUbic[s.ubic]=porUbic[s.ubic]||[]).push({k,s});
+  });
+  const ubics=Object.keys(porUbic).sort();
+  if(!ubics.length)return '<div class="empty">Sin gases en esta entidad.</div>';
+
+  let h='<div class="nota-legal" style="margin-bottom:16px"><b>Gráficas por ubicación:</b> cada gráfica muestra <b>todos los gases</b> medidos en esa ubicación. Los valores se normalizan al <b>límite permisible de cada gas (Decreto 1886 de 2015)</b>; el eje Y representa el <b>% del límite</b>. La zona verde es el rango permisible y la línea roja el límite (100 %).</div>';
+
+  ubics.forEach(ubic=>{
+    const items=porUbic[ubic];
+    // Para cada gas en la ubicación, calcular su color y límite
+    const series=[],limites={};
+    items.forEach((it,i)=>{
+      const G=cfg(it.s.g);
+      const lim=limitePermisible(it.s.g);
+      limites[it.s.g]=lim;
+      series.push({
+        n:G.nombre||it.s.g,
+        c:PAL[i%PAL.length],
+        g:it.s.g,
+        p:it.s.p
+      });
+    });
+    // Tabla resumen de gases en esta ubicación
+    const ultimos=items.map(it=>{
+      const G=cfg(it.s.g);
+      const lim=limitePermisible(it.s.g);
+      const ultimo=it.s.p[it.s.p.length-1][1];
+      const cumple=cumpleLimite(it.s.g,ultimo);
+      return {g:it.s.g, nombre:G.nombre||it.s.g, u:G.u, ultimo, lim, cumple, ref:G.ref};
+    });
+
+    h+=`<div class="chart-box">
+      <div class="row" style="justify-content:space-between;margin-bottom:6px">
+        <div><div class="label">Ubicación</div><div style="font-size:15px;font-weight:600">${esc(ubic)}</div></div>
+        <div class="muted" style="font-size:12px">${items.length} gas(es) · ${items[0].s.p.length} fecha(s)</div>
+      </div>
+      ${chartMultiGas(series, ubic, limites)}
+      <div class="chart-legend">
+        ${series.map(s=>`<span><i style="background:${s.c}"></i>${esc(s.n)}</span>`).join('')}
+        <span><i class="lim"></i>Límite permisible (100 %)</span>
+      </div>
+      <div class="tbl-wrap" style="margin-top:10px">
+        <table>
+          <thead><tr><th>Gas</th><th>Último</th><th>Límite D.1886</th><th>% del límite</th><th>Cumplimiento</th><th>Referencia</th></tr></thead>
+          <tbody>
+            ${ultimos.map(x=>{
+              const pct=x.lim?((x.ultimo/x.lim)*100).toFixed(1)+' %':'—';
+              const cumpleCls=x.cumple===true?'ok':(x.cumple===false?'no':'aux');
+              const cumpleTxt=x.cumple===true?'Cumple':(x.cumple===false?'No cumple':'—');
+              return `<tr>
+                <td><b>${esc(x.nombre)}</b></td>
+                <td>${fmt(x.ultimo)} ${esc(x.u||'')}</td>
+                <td>${x.lim?fmt(x.lim)+' '+esc(x.u||''):'—'}</td>
+                <td>${pct}</td>
+                <td><span class="chip ${cumpleCls}">${cumpleTxt}</span></td>
+                <td style="text-align:left;font-size:11px;color:var(--muted);white-space:normal">${esc(x.ref||'Decreto 1886/2015')}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  });
+  return h;
+}
+
+function renderIPRA(t){
+  const r=S.res;
+  const ip=r.IP.filter(x=>x.t===t);
+  if(!ip.length)return '<div class="empty">Sin datos de IPRA.</div>';
+  const last=ip[ip.length-1];
+  const clsIdx=CLS.indexOf(last.c);
+  const sevCls=CLS_SEV[clsIdx];
+  let h=`<div class="stat-card">
+    <div class="label">IPRA de gases · ${dstr(last.d)}</div>
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="kpi">${f3(last.v)}</div>
+      <div class="chip ${sevCls}" style="padding:6px 14px;font-size:14px">${SEV_ICO[clsIdx+1]} ${last.c}</div>
+    </div>
+    <div class="ipra-bar" style="margin-top:12px">
+      <span style="width:25%;background:var(--sev-normal)"></span>
+      <span style="width:25%;background:var(--sev-alerta)"></span>
+      <span style="width:25%;background:var(--sev-limite)"></span>
+      <span style="width:25%;background:var(--sev-critico)"></span>
+      <span class="ipra-mark" style="left:calc(${(last.v*100).toFixed(1)}% - 1px)"></span>
+    </div>
+  </div>`;
+  h+='<div class="chart-box" style="margin-top:var(--space-2)">'+
+    chart({L:[{n:t,c:'var(--focus)',p:ip.map(x=>[x.d,x.v])}],y0:0,y1:1,
+      bands:[[0,.25,'#16a34a'],[.25,.5,'#ca8a04'],[.5,.75,'#ea580c'],[.75,1,'#dc2626']],H:220,a:'IPRA de gases '+t})+
+    '</div>';
+  const ap=last.ap||{};
+  const keys=Object.keys(ap).filter(k=>ap[k]>0).sort((a,b)=>ap[b]-ap[a]);
+  if(keys.length){
+    h+='<h3 class="h-sec" style="margin-top:var(--space-3)">¿Qué gas aporta más al índice hoy?</h3>';
+    const maxAp=Math.max(...keys.map(k=>ap[k]));
+    keys.forEach(k=>{
+      h+=`<div style="margin:6px 0">
+        <div class="row" style="justify-content:space-between;font-size:13px"><span>${esc(cfg(k).nombre||k)}</span><span class="muted">${(ap[k]*100).toFixed(0)}%</span></div>
+        <div class="stack"><span style="width:${(ap[k]/maxAp*100).toFixed(1)}%;background:var(--focus)"></span></div>
+      </div>`;
+    });
+  }
+  h+='<details style="margin-top:var(--space-2)"><summary>Ver detalle diario</summary><div>';
+  h+='<div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>IPRA</th><th>Clase</th><th>Subido por regla</th></tr></thead><tbody>';
+  ip.forEach(x=>h+=`<tr><td>${dstr(x.d)}</td><td>${f3(x.v)}</td><td>${x.c}</td><td>${x.forz?'Sí':'—'}</td></tr>`);
+  h+='</tbody></table></div></div></details>';
+  return h;
+}
+
+function renderEstadistica(t){
+  const r=S.res;
+  const D=r.D.filter(x=>x.entidad===t);
+  if(!D.length)return '<div class="empty">Sin datos.</div>';
+  const u=g=>cfg(g).u||'';
+  let h=`<div class="tbl-wrap"><table><thead><tr><th>Ubicación</th><th>Gas</th><th>Media</th><th>Mín</th><th>Máx</th><th>P95</th><th>σ</th><th>Límite D.1886</th><th>Cumplimiento</th></tr></thead><tbody>`;
+  D.forEach(x=>{
+    const cumpleCls=x.cumple===true?'ok':(x.cumple===false?'no':'aux');
+    const cumpleTxt=x.cumple===true?'Cumple':(x.cumple===false?'No cumple':'—');
+    h+=`<tr>
+      <td>${esc(x.ubic)}</td>
+      <td>${esc(cfg(x.g).nombre||x.g)} <span class="muted" style="font-size:11px">${u(x.g)}</span></td>
+      <td>${fmt(x.m)}</td><td>${fmt(x.mn)}</td><td>${fmt(x.mx)}</td><td>${fmt(x.p95)}</td><td>${fmt(x.s)}</td>
+      <td>${x.lim?fmt(x.lim):'—'}</td>
+      <td><span class="chip ${cumpleCls}">${cumpleTxt}</span></td>
+    </tr>`;
+  });
+  h+='</tbody></table></div>';
+  h+='<details style="margin-top:var(--space-2)"><summary>Mostrar columnas avanzadas</summary><div>';
+  h+='<div class="tbl-wrap"><table><thead><tr><th>Ubicación</th><th>Gas</th><th>n</th><th>Mediana</th><th>Atípicos IQR</th><th>Atípicos |z|&gt;3</th></tr></thead><tbody>';
+  D.forEach(x=>{
+    h+=`<tr><td>${esc(x.ubic)}</td><td>${esc(cfg(x.g).nombre||x.g)}</td><td>${x.n}</td><td>${fmt(x.md)}</td>
+      <td>${x.iq>0?`<span class="chip sev-alerta" style="padding:1px 6px;font-size:11px">${x.iq}</span>`:'—'}</td>
+      <td>${x.z>0?`<span class="chip sev-critico" style="padding:1px 6px;font-size:11px">${x.z}</span>`:'—'}</td></tr>`;
+  });
+  h+='</tbody></table></div></div></details>';
+  return h;
+}
+
+function renderRelaciones(t){
+  const r=S.res;
+  const c=r.CORR[t];
+  if(!c)return '<div class="empty">Se necesitan al menos 2 gases para correlacionar.</div>';
+  const method=S.pearson?c.CP:c.CS;
+  const names=c.names;
+  const short=names.map(k=>{const s=r.ser[k];return(s.ubic.length>18?s.ubic.slice(0,16)+'…':s.ubic)+' · '+(cfg(s.g).nombre||s.g)});
+  let h=`<div class="seg" style="margin-bottom:var(--space-2)">
+    <button class="btn${S.pearson?' primary':''}" data-rel="pearson">Pearson</button>
+    <button class="btn${!S.pearson?' primary':''}" data-rel="spearman">Spearman</button>
+  </div>`;
+  h+='<div class="tbl-wrap"><table style="font-size:12px"><thead><tr><th></th>';
+  short.forEach(n=>h+=`<th style="writing-mode:vertical-rl;padding:8px 4px;font-size:11px;min-width:56px">${esc(n)}</th>`);
+  h+='</tr></thead><tbody>';
+  names.forEach((a,i)=>{
+    h+=`<tr><td>${esc(short[i])}</td>`;
+    names.forEach((b,j)=>{
+      if(j>i){h+='<td></td>';return}
+      const v=method.R[i][j],p=method.P[i][j];
+      const color=!Number.isFinite(v)?'var(--surface-2)':(v>0?`rgba(220,38,38,${Math.abs(v)})`:`rgba(37,99,235,${Math.abs(v)})`);
+      const txt=Number.isFinite(v)?v.toFixed(2):'';
+      const sig=p<.05&&i!==j;
+      h+=`<td style="background:${color};position:relative;min-width:56px;color:${Math.abs(v)>0.6?'#fff':'var(--ink)'}">${txt}${sig?'<span style="position:absolute;top:2px;right:3px;font-size:8px">●</span>':''}</td>`;
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div style="margin-top:12px;font-size:12px;color:var(--muted)"><div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin-bottom:4px"><span style="flex:1;background:rgba(37,99,235,1)"></span><span style="flex:1;background:rgba(37,99,235,.5)"></span><span style="flex:1;background:var(--surface-2)"></span><span style="flex:1;background:rgba(220,38,38,.5)"></span><span style="flex:1;background:rgba(220,38,38,1)"></span></div><div class="row" style="justify-content:space-between"><span>−1 inversa</span><span>0 sin relación</span><span>+1 directa</span></div><div style="margin-top:6px">● relación estadísticamente significativa (p &lt; 0,05)</div></div>';
+  return h;
+}
+
+function renderProyeccion(t){
+  const r=S.res;
+  const items=Object.entries(r.ser).filter(([k,s])=>s.entidad===t&&esGas(s.g)&&r.PR[k]).map(([k,s])=>({k,s,p:r.PR[k]}));
+  if(!items.length)return '<div class="empty">Sin proyecciones.</div>';
+  const confCls={ALTA:'sev-normal',MEDIA:'sev-alerta',BAJA:'sev-limite','MUY BAJA':'sev-critico'};
+  let h='<h3 class="h-sec">Comportamiento proyectado vs límite permisible (D. 1886/2015)</h3>';
+  const L=[],hl=[];
+  items.forEach((it,i)=>{
+    const s=it.s,p=it.p;
+    L.push({n:`${s.ubic} · ${cfg(s.g).nombre||s.g}`,c:PAL[i%PAL.length],p:s.p});
+    const lp=s.p[s.p.length-1];
+    L.push({c:PAL[i%PAL.length],d:1,p:[lp,...p.fx.map((x,j)=>[x,p.y[j]])],b:p.fx.map((x,j)=>[x,p.lo[j],p.hi[j]])});
+    const lim=limitePermisible(s.g);
+    if(Number.isFinite(lim)) hl.push({y:lim,l:`Límite ${s.g} ${lim} ${cfg(s.g).u||''}`,c:COL[4]});
+  });
+  h+='<div class="chart-box">'+chart({L,h:hl,H:320,a:'Proyección vs límite Decreto 1886'})+'</div>';
+  h+='<p class="muted" style="font-size:12px;margin-top:8px">La <b>línea roja</b> marca el límite permisible del gas según el Decreto 1886 de 2015.</p>';
+  h+='<div class="grid grid-2" style="margin-top:var(--space-2)">';
+  items.forEach(it=>{
+    const p=it.p,i=p.y.length-1;
+    const G=cfg(it.s.g);
+    const lim=limitePermisible(it.s.g);
+    const trend=p.sl>0?'↑ sube':(p.sl<0?'↓ baja':'→ estable');
+    const cumpleFin=cumpleLimite(it.s.g, p.y[i]);
+    const cumpleCls=cumpleFin===true?'ok':(cumpleFin===false?'no':'aux');
+    const cumpleTxt=cumpleFin===true?'Proyectado dentro del límite':(cumpleFin===false?'Proyectado FUERA del límite':'—');
+    h+=`<div class="card">
+      <div class="row" style="justify-content:space-between"><b>${esc(it.s.ubic)} · ${esc(G.nombre||it.s.g)}</b><span class="chip ${confCls[p.conf]||'sev-alerta'}" title="${esc(p.nota||'')}">${p.conf}</span></div>
+      <div class="muted" style="font-size:12px;margin-top:4px">${trend} ${Math.abs(p.sl).toFixed(4)} ${G.u||''}/día</div>
+      <div class="kpi" style="font-size:26px;margin-top:8px">${fmt(p.y[i])} ${esc(G.u||'')}</div>
+      <div class="muted" style="font-size:12px">Banda esperada (~95 %): ${fmt(p.lo[i])} a ${fmt(p.hi[i])}</div>
+      <div class="muted" style="font-size:12px">Límite permisible: <b>${lim?fmt(lim)+' '+G.u:'—'}</b></div>
+      <div style="margin-top:8px"><span class="chip ${cumpleCls}">${cumpleTxt}</span></div>
+      <div style="margin-top:8px">${sparkline(it.s.p.map(x=>[x[0],x[1]]),'var(--focus)')}</div>
+    </div>`;
+  });
+  h+='</div>';
+  h+='<details style="margin-top:var(--space-2)"><summary>Ver detalle técnico</summary><div>';
+  h+='<div class="tbl-wrap"><table><thead><tr><th>Ubicación</th><th>Gas</th><th>Método</th><th>n</th><th>R²</th><th>Pendiente</th><th>p pend.</th><th>Valor final</th><th>Banda</th><th>Límite</th><th>Cumple</th></tr></thead><tbody>';
+  items.forEach(it=>{
+    const p=it.p,i=p.y.length-1,G=cfg(it.s.g),lim=limitePermisible(it.s.g);
+    const cumple=cumpleLimite(it.s.g,p.y[i]);
+    const cumpleCls=cumple===true?'ok':(cumple===false?'no':'aux');
+    const cumpleTxt=cumple===true?'Sí':(cumple===false?'No':'—');
+    h+=`<tr><td>${esc(it.s.ubic)}</td><td>${esc(G.nombre||it.s.g)}</td><td>${p.m}</td><td>${p.n}</td><td>${fmt(p.r2)}</td><td>${fmt(p.sl)}</td><td>${fmt(p.pp)}</td><td>${fmt(p.y[i])}</td><td>${fmt(p.lo[i])}–${fmt(p.hi[i])}</td><td>${lim?fmt(lim):'—'}</td><td><span class="chip ${cumpleCls}">${cumpleTxt}</span></td></tr>`;
+  });
+  h+='</tbody></table></div></div></details>';
+  return h;
+}
+
+function renderAcciones(t){
+  const r=S.res;
+  const items=r.rec[t]||[];
+  const icos={evac:'✖',crit:'◆',limit:'■',alert:'▲',info:'ℹ',ok:'✓'};
+  const cls={evac:'sev-evac',crit:'sev-critico',limit:'sev-limite',alert:'sev-alerta',info:'sev-alerta',ok:'sev-normal'};
+  let h='';
+  items.forEach(it=>{
+    const c=cls[it.tipo]||'sev-normal';
+    h+=`<div class="card"><div class="row" style="gap:12px;align-items:flex-start"><span class="chip ${c}" style="flex-shrink:0">${icos[it.tipo]||'ℹ'}</span><div style="flex:1;font-size:14px">${esc(it.txt)}</div></div></div>`;
+  });
+  h+=`<div class="card" style="background:var(--surface-2);box-shadow:none"><div class="row" style="gap:8px"><span class="muted">ⓘ</span><span style="font-size:13px">${esc(r.recGen)}</span></div></div>`;
+  return h;
+}
+
+function renderComparativa(){
+  const r=S.res;
+  if(r.entidades.length<2)return '<div class="empty">Se necesitan al menos 2 entidades para comparar.</div>';
+  const vars=[...new Set(Object.values(r.ser).filter(s=>esGas(s.g)).map(s=>s.g))].sort();
+  let h='<div class="card"><h2 class="h-sec">Comparativa de gases entre entidades (D. 1886/2015)</h2>';
+  h+='<div class="tbl-wrap"><table><thead><tr><th>Gas</th>';
+  r.entidades.forEach(e=>h+=`<th>Últ. ${esc(e)}</th><th>Máx ${esc(e)}</th>`);
+  h+='<th>Límite</th></tr></thead><tbody>';
+  vars.forEach(g=>{
+    const lim=limitePermisible(g);
+    h+=`<tr><td><b>${esc(cfg(g).nombre||g)}</b></td>`;
+    r.entidades.forEach(e=>{
+      const s=Object.values(r.ser).filter(x=>x.entidad===e&&x.g===g);
+      const last=s.length?mean(s.map(x=>x.p[x.p.length-1][1])):NaN;
+      const mx=s.length?Math.max(...s.flatMap(x=>x.p.map(p=>p[1]))):NaN;
+      h+=`<td>${fmt(last)}</td><td>${fmt(mx)}</td>`;
+    });
+    h+=`<td>${lim?fmt(lim):'—'}</td></tr>`;
+  });
+  h+='</tbody></table></div></div>';
+  h+='<div class="card"><h3 class="h-sec">IPRA de gases comparado</h3>';
+  const ipL=[];
+  r.entidades.forEach((e,i)=>{
+    const ip=r.IP.filter(x=>x.t===e);
+    if(ip.length)ipL.push({n:e,c:PAL[i%PAL.length],p:ip.map(x=>[x.d,x.v])});
+  });
+  h+='<div class="chart-box">'+chart({L:ipL,y0:0,y1:1,bands:[[0,.25,'#16a34a'],[.25,.5,'#ca8a04'],[.5,.75,'#ea580c'],[.75,1,'#dc2626']],H:260,a:'IPRA de gases comparado'})+'</div></div>';
+  return h;
+}
+
+function renderGuia(){
+  const entradas=[
+    {t:'Marco normativo',c:'Los umbrales de gases aplicados por defecto corresponden al Decreto 1886 de 2015 (Reglamento de Seguridad en el Trabajo Minero). La zona verde en los gráficos indica el rango permisible.'},
+    {t:'CH₄',c:'Alerta 0,5 % · Crítico 1,0 % · Evacuación 1,4 % (Decreto 1886 de 2015).'},
+    {t:'O₂',c:'Mínimo respirable 19,5 % · Alerta 20,0 % (Decreto 1886 de 2015).'},
+    {t:'CO',c:'Valor límite permisible 25 ppm (TWA 8 h) · Crítico 50 ppm.'},
+    {t:'CO₂',c:'Valor límite permisible 0,5 %.'},
+    {t:'H₂S',c:'Valor límite permisible 10 ppm, techo 15 ppm.'},
+    {t:'NO₂',c:'Valor límite permisible 3 ppm, techo 5 ppm.'},
+    {t:'SO₂',c:'Valor límite permisible 2 ppm, techo 5 ppm.'},
+    {t:'NO',c:'Valor límite permisible 25 ppm.'},
+    {t:'Gases por ubicación',c:'En la sub-pestaña "Gases por ubicación" se muestra una gráfica por cada ubicación con todos los gases medidos. Cada serie se normaliza a su propio límite permisible, por lo que el eje Y es el % del límite (100 % = límite).'},
+    {t:'IPRA de gases',c:'Número entre 0 y 1 que resume el riesgo por gases. Clases: < 0,25 Bajo · 0,25–0,50 Medio · 0,50–0,75 Alto · ≥ 0,75 Crítico.'},
+    {t:'Cumplimiento',c:'Para cada serie se compara el último valor con el límite permisible del Decreto 1886 de 2015.'},
+    {t:'Variables auxiliares',c:'Caudal, velocidad, área, temperatura, humedad, emisión, producción y tiempo. Se leen pero no participan en el IPRA.'},
+    {t:'Confiabilidad',c:'ALTA (n≥8, R²≥0,3) · MEDIA · BAJA · MUY BAJA (1–2 puntos).'}
+  ];
+  let h='<div class="card"><h2 class="h-sec">Cómo leer el informe</h2><ol style="font-size:14px;line-height:1.8"><li>Revisa el <b>estado</b> en Resumen.</li><li>Consulta las <b>alertas</b> en Estado.</li><li>Revisa <b>Gases por ubicación</b> para ver cada ubicación con todos sus gases.</li><li>Consulta la <b>proyección</b> con el límite permisible.</li></ol></div>';
+  h+='<div class="card"><h2 class="h-sec">Glosario</h2><p><b>CH₄</b> metano · <b>CO</b> monóxido de carbono · <b>CO₂</b> dióxido de carbono · <b>O₂</b> oxígeno · <b>H₂S</b> ácido sulfhídrico · <b>NO₂</b> dióxido de nitrógeno · <b>SO₂</b> dióxido de azufre · <b>NO</b> monóxido de nitrógeno</p></div>';
+  h+='<div class="card"><h2 class="h-sec">Conceptos</h2>';
+  entradas.forEach(e=>{
+    h+=`<details><summary><b>${esc(e.t)}</b></summary><div><p style="margin:0;font-size:13px">${esc(e.c)}</p></div></details>`;
+  });
+  h+='</div>';
+  return h;
+}
+
+function bindInner(){
+  $$('[data-sub]').forEach(b=>b.onclick=()=>{S.tabTunel[b.dataset.tunel]=b.dataset.sub;renderTabsL1()});
+  $$('[data-rel]').forEach(b=>b.onclick=()=>{S.pearson=b.dataset.rel==='pearson';renderTabsL1()});
+}
+
+// =====================================================================
+// DESCARGA AUTOMÁTICA DEL REPORTE
+// =====================================================================
+function dl(n,t,m){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+t],{type:m||'text/csv;charset=utf-8'}));
+  a.download=n;document.body.appendChild(a);a.click();
+  setTimeout(()=>{a.remove();URL.revokeObjectURL(a.href)},1000);
+}
+function reporte(){
+  const r=S.res;
+  if(!r){
+    toast('Primero ejecuta el análisis para generar el reporte.',false);
+    return;
+  }
+  try{
+    const L=[],ln='='.repeat(90);
+    const cs=a=>a.map(v=>/[",;\n]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':v).join(',');
+    L.push(ln,'REPORTE · ANÁLISIS DE GASES — DECRETO 1886 DE 2015',ln,
+      `Período: ${r.d0} a ${r.d1} | Días: ${r.unicosDias} | Entidades: ${r.entidades.join(', ')}`,
+      'Gases analizados: '+r.G.map(g=>cfg(g).nombre||g).join(', '),
+      'Agregación: '+(r.ag=='m'?'media':'máximo')+' | Proyección: '+r.me+' a '+r.H+' día(s)','');
+    r.entidades.forEach(t=>{
+      L.push('#'.repeat(90),'# '+t.toUpperCase(),'#'.repeat(90),'');
+      const A_t=r.A.filter(a=>a.entidad===t);
+      const D_t=r.D.filter(x=>x.entidad===t);
+      const IP_t=r.IP.filter(x=>x.t==t);
+      L.push('ESTADÍSTICA DE GASES Y CUMPLIMIENTO (D.1886)');
+      D_t.forEach(x=>{
+        const cumpleTxt=x.cumple===true?'Cumple':(x.cumple===false?'NO cumple':'sin límite');
+        L.push(`  ${x.ubic} · ${cfg(x.g).nombre||x.g}: n=${x.n} media=${f3(x.m)} σ=${f3(x.s)} min=${f3(x.mn)} max=${f3(x.mx)} | límite=${x.lim?f3(x.lim):'—'} | ${cumpleTxt}`);
+      });
+      L.push('','IPRA DE GASES');
+      if(IP_t.length)IP_t.forEach(x=>L.push(`  ${dstr(x.d)}: ${f3(x.v)} (${x.c})`));
+      L.push('','ALERTAS');
+      A_t.forEach(a=>L.push(`  [${ETQ[a.s]}] (${a.y}) ${a.ubic||''} ${a.txt}`));
+      if(!A_t.length)L.push('  Sin alertas.');
+      L.push('','PROYECCIONES Y COMPARACIÓN CON LÍMITE');
+      const PR_t=Object.keys(r.ser).filter(k=>r.ser[k].entidad===t);
+      PR_t.forEach(k=>{
+        const p=r.PR[k];if(!p)return;
+        const i=p.y.length-1,s=r.ser[k],lim=limitePermisible(s.g);
+        const cumple=cumpleLimite(s.g,p.y[i]);
+        const cumpleTxt=cumple===true?'Cumple':(cumple===false?'NO cumple':'—');
+        L.push(`  ${s.ubic} · ${cfg(s.g).nombre||s.g}: ${p.m} n=${p.n} R²=${f3(p.r2)} final=${f3(p.y[i])} ${cfg(s.g).u||''} | límite=${lim?f3(lim):'—'} | ${cumpleTxt} | conf=${p.conf}`);
+      });
+      L.push('','RECOMENDACIONES');
+      r.rec[t].forEach((x,i)=>L.push(`  ${i+1}. ${x.txt}`));
+      L.push('');
+    });
+    L.push(ln,'RECOMENDACIÓN GENERAL',r.recGen,'',ln);
+    const dp=['fecha,entidad,ubicacion,gas,valor,unidad'];
+    r.rows.forEach(x=>dp.push(cs([x.f,x.entidad,x.ubic,x.g,x.v,x.u])));
+    // Descarga inmediata y secuencial
+    dl('reporte_gases_D1886.txt',L.join('\n'),'text/plain;charset=utf-8');
+    setTimeout(()=>dl('datos_gases.csv',dp.join('\n')),300);
+    toast('✔ Reporte descargado: reporte_gases_D1886.txt y datos_gases.csv',true);
+  }catch(e){
+    console.error(e);
+    toast('Error al generar el reporte: '+e.message,false);
+  }
+}
+
+// =====================================================================
+// LISTENERS
+// =====================================================================
+document.addEventListener('DOMContentLoaded',()=>{
+  setStep(1);
+  $('#fl').onchange=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    try{
+      const rows=await leerArchivo(f);
+      cargar(rows);
+    }catch(x){
+      console.error(x);
+      $('#step2').hidden=true;
+      $('#q').innerHTML='<p style="color:var(--sev-critico);font-weight:600"><b>Error:</b> '+esc(x.message)+'</p>';
+    }
+  };
+  const drop=$('#drop');
+  if(drop){
+    ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();drop.classList.add('over')}));
+    ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();drop.classList.remove('over')}));
+    drop.addEventListener('drop',async e=>{
+      const f=e.dataTransfer.files[0];if(!f)return;
+      try{
+        const rows=await leerArchivo(f);
+        cargar(rows);
+      }catch(x){
+        console.error(x);
+        $('#q').innerHTML='<p style="color:var(--sev-critico);font-weight:600">'+esc(x.message)+'</p>';
+      }
+    });
+  }
+  $('#dy').oninput=e=>$('#dv').textContent=e.target.value;
+  $('#bRun').onclick=ejecutar;
+  $('#bRun2').onclick=ejecutar;
+  $('#bRep').onclick=reporte;
+});
+</script>
+</body>
+</html>
